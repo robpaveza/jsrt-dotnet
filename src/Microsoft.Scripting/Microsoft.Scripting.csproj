@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{1BB54949-D911-4A97-9715-608EA27FDC93}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Microsoft.Scripting</RootNamespace>
+    <AssemblyName>Microsoft.Scripting</AssemblyName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <TargetFrameworkVersion>v5.0</TargetFrameworkVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Errors.cs" />
+    <Compile Include="JavaScript\JavaScriptArray.cs" />
+    <Compile Include="JavaScript\JavaScriptArrayBuffer.cs" />
+    <Compile Include="JavaScript\JavaScriptConverter.cs" />
+    <Compile Include="JavaScript\JavaScriptDataView.cs" />
+    <Compile Include="JavaScript\JavaScriptEngine.cs" />
+    <Compile Include="JavaScript\JavaScriptFunction.cs" />
+    <Compile Include="JavaScript\JavaScriptMemoryAllocationEventArgs.cs" />
+    <Compile Include="JavaScript\JavaScriptMemoryAllocationEventType.cs" />
+    <Compile Include="JavaScript\JavaScriptObject.cs" />
+    <Compile Include="JavaScript\JavaScriptRuntime.cs" />
+    <Compile Include="JavaScript\JavaScriptRuntimeSettings.cs" />
+    <Compile Include="JavaScript\JavaScriptSymbol.cs" />
+    <Compile Include="JavaScript\JavaScriptTypedArray.cs" />
+    <Compile Include="JavaScript\JavaScriptTypedArrayType.cs" />
+    <Compile Include="JavaScript\JavaScriptValue.cs" />
+    <Compile Include="JavaScript\JavaScriptValueType.cs" />
+    <Compile Include="JavaScript\SafeHandles\JavaScriptEngineSafeHandle.cs" />
+    <Compile Include="JavaScript\SafeHandles\JavaScriptRuntimeSafeHandle.cs" />
+    <Compile Include="JavaScript\SafeHandles\JavaScriptValueSafeHandle.cs" />
+    <Compile Include="NativeMethods.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScriptSource.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="project.json" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
