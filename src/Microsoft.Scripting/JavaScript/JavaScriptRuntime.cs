@@ -13,22 +13,24 @@ namespace Microsoft.Scripting.JavaScript
     {
         private JavaScriptRuntimeSettings settings_;
         private JavaScriptRuntimeSafeHandle handle_;
+        private ChakraApi api_ = ChakraApi.Instance;
         
         public JavaScriptRuntime(JavaScriptRuntimeSettings settings = null)
         {
             if (settings == null)
                 settings = new JavaScriptRuntimeSettings();
 
+            settings_ = settings;
             var attrs = settings.GetRuntimeAttributes();
 
-            var errorCode = NativeMethods.JsCreateRuntime(attrs, IntPtr.Zero, out handle_);
+            var errorCode = api_.JsCreateRuntime(attrs, IntPtr.Zero, out handle_);
             if (errorCode != JsErrorCode.JsNoError)
                 Errors.ThrowFor(errorCode);
 
             settings.Used = true;
 
             GCHandle handle = GCHandle.Alloc(this, GCHandleType.Weak);
-            errorCode = NativeMethods.JsSetRuntimeMemoryAllocationCallback(handle_, GCHandle.ToIntPtr(handle), MemoryCallbackThunkPtr);
+            errorCode = api_.JsSetRuntimeMemoryAllocationCallback(handle_, GCHandle.ToIntPtr(handle), MemoryCallbackThunkPtr);
             if (errorCode != JsErrorCode.JsNoError)
                 Errors.ThrowFor(errorCode);
         }
@@ -38,7 +40,7 @@ namespace Microsoft.Scripting.JavaScript
             if (handle_ == null)
                 throw new ObjectDisposedException(nameof(JavaScriptRuntime));
 
-            var error = NativeMethods.JsCollectGarbage(handle_);
+            var error = api_.JsCollectGarbage(handle_);
             Errors.ThrowIfIs(error);
         }
 
@@ -48,10 +50,10 @@ namespace Microsoft.Scripting.JavaScript
                 throw new ObjectDisposedException(nameof(JavaScriptRuntime));
 
             JavaScriptEngineSafeHandle engine;
-            var error = NativeMethods.JsCreateContext(handle_, out engine);
+            var error = api_.JsCreateContext(handle_, out engine);
             Errors.ThrowIfIs(error);
 
-            return new JavaScriptEngine(engine, this);
+            return new JavaScriptEngine(engine, this, api_);
         }
 
         public void EnableExecution()
@@ -59,7 +61,7 @@ namespace Microsoft.Scripting.JavaScript
             if (handle_ == null)
                 throw new ObjectDisposedException(nameof(JavaScriptRuntime));
 
-            var error = NativeMethods.JsEnableRuntimeExecution(handle_);
+            var error = api_.JsEnableRuntimeExecution(handle_);
             Errors.ThrowIfIs(error);
         }
 
@@ -68,7 +70,7 @@ namespace Microsoft.Scripting.JavaScript
             if (handle_ == null)
                 throw new ObjectDisposedException(nameof(JavaScriptRuntime));
 
-            var error = NativeMethods.JsDisableRuntimeExecution(handle_);
+            var error = api_.JsDisableRuntimeExecution(handle_);
             Errors.ThrowIfIs(error);
         }
 
@@ -80,7 +82,7 @@ namespace Microsoft.Scripting.JavaScript
                     throw new ObjectDisposedException(nameof(JavaScriptRuntime));
 
                 ulong result;
-                var error = NativeMethods.JsGetRuntimeMemoryUsage(handle_, out result);
+                var error = api_.JsGetRuntimeMemoryUsage(handle_, out result);
                 Errors.ThrowIfIs(error);
 
                 return result;
@@ -95,7 +97,7 @@ namespace Microsoft.Scripting.JavaScript
                     throw new ObjectDisposedException(nameof(JavaScriptRuntime));
 
                 bool result;
-                var error = NativeMethods.JsIsRuntimeExecutionDisabled(handle_, out result);
+                var error = api_.JsIsRuntimeExecutionDisabled(handle_, out result);
                 Errors.ThrowIfIs(error);
 
                 return !result;
@@ -110,6 +112,11 @@ namespace Microsoft.Scripting.JavaScript
             {
                 changing(this, args);
             }
+        }
+
+        public JavaScriptRuntimeSettings Settings
+        {
+            get { return settings_; }
         }
 
         #region Disposable implementation

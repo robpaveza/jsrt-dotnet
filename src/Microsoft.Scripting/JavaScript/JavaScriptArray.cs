@@ -38,7 +38,7 @@ namespace Microsoft.Scripting.JavaScript
             JavaScriptValueSafeHandle resultHandle;
             using (var temp = eng.Converter.FromInt32(index))
             {
-                Errors.ThrowIfIs(NativeMethods.JsGetIndexedProperty(handle_, temp.handle_, out resultHandle));
+                Errors.ThrowIfIs(api_.JsGetIndexedProperty(handle_, temp.handle_, out resultHandle));
             }
             return eng.CreateValueFromHandle(resultHandle);
         }
@@ -49,7 +49,7 @@ namespace Microsoft.Scripting.JavaScript
 
             using (var temp = eng.Converter.FromInt32(index))
             {
-                Errors.ThrowIfIs(NativeMethods.JsSetIndexedProperty(handle_, temp.handle_, value.handle_));
+                Errors.ThrowIfIs(api_.JsSetIndexedProperty(handle_, temp.handle_, value.handle_));
             }
         }
 

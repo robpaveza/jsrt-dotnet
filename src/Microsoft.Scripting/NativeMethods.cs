@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Scripting
 {
-    internal static class NativeMethods
+    /*internal static class NativeMethods
     {
         [DllImport("chakra")]
         internal static extern JsErrorCode JsAddRef(IntPtr @ref, out uint count);
@@ -143,6 +143,8 @@ namespace Microsoft.Scripting
         [DllImport("chakra")]
         internal static extern JsErrorCode JsCreateObject(out JavaScriptValueSafeHandle result);
         [DllImport("chakra")]
+        internal static extern JsErrorCode JsCreateExternalObject(IntPtr data, IntPtr finalizeCallback, out JavaScriptValueSafeHandle handle);
+        [DllImport("chakra")]
         internal static extern JsErrorCode JsCreateSymbol(JavaScriptValueSafeHandle descriptionHandle, out JavaScriptValueSafeHandle result);
         [DllImport("chakra")]
         internal static extern JsErrorCode JsCreateArray(uint length, out JavaScriptValueSafeHandle result);
@@ -153,19 +155,79 @@ namespace Microsoft.Scripting
 
         [DllImport("chakra")]
         internal static extern JsErrorCode JsIdle(out uint nextTick);
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsGetAndClearException(out JavaScriptValueSafeHandle result);
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsSetException(JavaScriptValueSafeHandle exception);
+
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsCreateError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsCreateRangeError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsCreateReferenceError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsCreateSyntaxError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsCreateTypeError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsCreateURIError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsStartDebugging();
         #endregion
-    }
+
+        #region Execution functions
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsParseScript(
+            [MarshalAs(UnmanagedType.LPWStr)] string script,
+            long sourceContextId,
+            [MarshalAs(UnmanagedType.LPWStr)] string sourceUrl,
+            out JavaScriptValueSafeHandle handle);
+
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsParseSerializedScript(
+            [MarshalAs(UnmanagedType.LPWStr)] string script,
+            IntPtr buffer,
+            long sourceContext,
+            [MarshalAs(UnmanagedType.LPWStr)] string sourceUrl,
+            out JavaScriptValueSafeHandle handle);
+
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsSerializeScript(
+            [MarshalAs(UnmanagedType.LPWStr)] string script,
+            IntPtr buffer,
+            ref uint bufferSize);
+
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsRunScript(
+            [MarshalAs(UnmanagedType.LPWStr)] string script,
+            long sourceContextId,
+            [MarshalAs(UnmanagedType.LPWStr)] string sourceUrl,
+            out JavaScriptValueSafeHandle handle);
+
+        [DllImport("chakra")]
+        internal static extern JsErrorCode JsRunSerializedScript(
+            [MarshalAs(UnmanagedType.LPWStr)] string script,
+            IntPtr buffer,
+            long sourceContext,
+            [MarshalAs(UnmanagedType.LPWStr)] string sourceUrl,
+            out JavaScriptValueSafeHandle handle);
+        #endregion
+    } */
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     internal delegate bool MemoryCallbackThunkCallback(IntPtr callbackState, JavaScriptMemoryAllocationEventType allocationEvent, ulong allocationSize);
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    internal delegate JavaScriptValueSafeHandle NativeFunctionThunkCallback(
-        JavaScriptValueSafeHandle callee, 
+    internal delegate IntPtr NativeFunctionThunkCallback(
+        IntPtr callee, 
         [MarshalAs(UnmanagedType.U1)] bool asConstructor, 
-        [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] JavaScriptValueSafeHandle[] args, 
+        [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] IntPtr[] args, 
         ushort argCount, 
         IntPtr data);
+
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    internal delegate void JsFinalizeCallback(IntPtr data);
 
     internal enum JsErrorCode
     {
@@ -450,21 +512,6 @@ namespace Microsoft.Scripting
                 default:
                     return JavaScriptValueType.Undefined;
             }
-        }
-
-        public static IEnumerable<T> PrependWith<T>(this IEnumerable<T> sequence, T toPrepend)
-        {
-            yield return toPrepend;
-            foreach (var i in sequence)
-                yield return i;
-        }
-
-        public static IEnumerable<T> PrependWith<T>(this IEnumerable<T> sequence, params T[] toPrepend)
-        {
-            foreach (T i in toPrepend)
-                yield return i;
-            foreach (T i in sequence)
-                yield return i;
         }
     }
 }

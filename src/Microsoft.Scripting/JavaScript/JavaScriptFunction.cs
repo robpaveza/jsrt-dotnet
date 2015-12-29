@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Dynamic;
 
 namespace Microsoft.Scripting.JavaScript
 {
@@ -17,26 +18,26 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptValue Invoke(IEnumerable<JavaScriptValue> args)
         {
-            var argsArray = args.Select(val => val.handle_).ToArray();
+            var argsArray = args.PrependWith(this).Select(val => val.handle_.DangerousGetHandle()).ToArray();
             if (argsArray.Length > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(args));
 
             var eng = GetEngineAndClaimContext();
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsCallFunction(handle_, argsArray, (ushort)argsArray.Length, out resultHandle));
+            Errors.ThrowIfIs(api_.JsCallFunction(handle_, argsArray, (ushort)argsArray.Length, out resultHandle));
 
             return eng.CreateValueFromHandle(resultHandle);
         }
 
         public JavaScriptObject Construct(IEnumerable<JavaScriptValue> args)
         {
-            var argsArray = args.Select(val => val.handle_).ToArray();
+            var argsArray = args.PrependWith(this).Select(val => val.handle_.DangerousGetHandle()).ToArray();
             if (argsArray.Length > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(args));
 
             var eng = GetEngineAndClaimContext();
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsConstructObject(handle_, argsArray, (ushort)argsArray.Length, out resultHandle));
+            Errors.ThrowIfIs(api_.JsConstructObject(handle_, argsArray, (ushort)argsArray.Length, out resultHandle));
 
             return eng.CreateObjectFromHandle(resultHandle);
         }
@@ -81,5 +82,25 @@ namespace Microsoft.Scripting.JavaScript
             var applyFn = GetBuiltinFunctionProperty("call", "Function.prototype.call");
             return applyFn.Invoke(args.PrependWith(thisObject));
         }
+
+        #region DynamicObject overrides
+        public override bool TryInvoke(InvokeBinder binder, object[] args, out object result)
+        {
+            var e = GetEngine();
+            var c = e.Converter;
+            result = Invoke(args.Select(a => c.FromObject(a)));
+
+            return true;
+        }
+
+        public override bool TryCreateInstance(CreateInstanceBinder binder, object[] args, out object result)
+        {
+            var e = GetEngine();
+            var c = e.Converter;
+            result = Construct(args.Select(a => c.FromObject(a)));
+
+            return true;
+        }
+        #endregion
     }
 }

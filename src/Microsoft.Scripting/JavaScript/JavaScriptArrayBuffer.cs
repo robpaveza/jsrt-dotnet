@@ -23,7 +23,7 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
             IntPtr buffer;
             uint len;
-            Errors.ThrowIfIs(NativeMethods.JsGetArrayBufferStorage(handle_, out buffer, out len));
+            Errors.ThrowIfIs(api_.JsGetArrayBufferStorage(handle_, out buffer, out len));
 
             return len;
         }
@@ -41,7 +41,7 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
             IntPtr buffer;
             uint len;
-            Errors.ThrowIfIs(NativeMethods.JsGetArrayBufferStorage(handle_, out buffer, out len));
+            Errors.ThrowIfIs(api_.JsGetArrayBufferStorage(handle_, out buffer, out len));
 
             return new UnmanagedMemoryStream((byte*)buffer.ToPointer(), len);
         }

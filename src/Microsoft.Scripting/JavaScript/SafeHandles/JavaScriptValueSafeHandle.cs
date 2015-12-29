@@ -10,10 +10,25 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
 {
     internal class JavaScriptValueSafeHandle : SafeHandle
     {
-        internal JavaScriptValueSafeHandle(IntPtr handle):
+        private WeakReference<JavaScriptEngine> engine_;
+
+        public JavaScriptValueSafeHandle():
+            base(IntPtr.Zero, ownsHandle: true)
+        {
+
+        }
+
+        public JavaScriptValueSafeHandle(IntPtr handle):
             base(handle, true)
         {
 
+        }
+
+        internal void SetEngine(JavaScriptEngine engine)
+        {
+            Debug.Assert(engine != null);
+
+            engine_ = new WeakReference<JavaScriptEngine>(engine);
         }
 
         public override bool IsInvalid
@@ -29,11 +44,14 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
             if (IsInvalid)
                 return false;
 
-            uint count;
-            var error = NativeMethods.JsRelease(handle, out count);
-
-            Debug.Assert(error == JsErrorCode.JsNoError);
-            return true;
+            JavaScriptEngine eng;
+            if (engine_.TryGetTarget(out eng))
+            {
+                eng.EnqueueRelease(handle);
+                return true;
+            }
+            
+            return false;
         }
     }
 }

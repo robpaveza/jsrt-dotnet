@@ -20,28 +20,52 @@ namespace Microsoft.Scripting.JavaScript
             public JavaScriptCallableFunction callback;
             public WeakReference<JavaScriptEngine> engine;
         }
+
+        private class ExternalObjectThunkData
+        {
+            public WeakReference<JavaScriptEngine> engine;
+            public WeakReference<object> userData;
+            public JavaScriptExternalObjectFinalizeCallback callback;
+        }
+
         private JavaScriptEngineSafeHandle handle_;
         private WeakReference<JavaScriptRuntime> runtime_;
         private JavaScriptConverter converter_;
         private List<NativeFunctionThunkData> nativeFunctionThunks_;
         private static NativeFunctionThunkCallback NativeCallback;
         private static IntPtr NativeCallbackPtr;
+        private static JsFinalizeCallback FinalizerCallback;
+        private static IntPtr FinalizerCallbackPtr;
+        private HashSet<ExternalObjectThunkData> externalObjects_;
+        private ChakraApi api_;
 
+        private List<IntPtr> handlesToRelease_;
+        private object handleReleaseLock_;
+        
         static JavaScriptEngine()
         {
             NativeCallback = NativeCallbackThunk;
             NativeCallbackPtr = Marshal.GetFunctionPointerForDelegate(NativeCallback);
+
+            FinalizerCallback = FinalizerCallbackThunk;
+            FinalizerCallbackPtr = Marshal.GetFunctionPointerForDelegate(FinalizerCallback);
         }
 
-        internal JavaScriptEngine(JavaScriptEngineSafeHandle handle, JavaScriptRuntime runtime)
+        internal JavaScriptEngine(JavaScriptEngineSafeHandle handle, JavaScriptRuntime runtime, ChakraApi api)
         {
             Debug.Assert(handle != null);
             Debug.Assert(runtime != null);
+            Debug.Assert(api != null);
+            api_ = api;
 
             handle_ = handle;
             runtime_ = new WeakReference<JavaScriptRuntime>(runtime);
             converter_ = new JavaScriptConverter(this);
             nativeFunctionThunks_ = new List<NativeFunctionThunkData>();
+            externalObjects_ = new HashSet<ExternalObjectThunkData>();
+
+            handlesToRelease_ = new List<IntPtr>();
+            handleReleaseLock_ = new object();
         }
 
         public JavaScriptRuntime Runtime
@@ -65,12 +89,43 @@ namespace Microsoft.Scripting.JavaScript
         }
 
         #region Internal methods
+        internal ChakraApi Api
+        {
+            get
+            {
+                return api_;
+            }
+        }
+
+        internal void EnqueueRelease(IntPtr handle)
+        {
+            lock (handleReleaseLock_)
+            {
+                handlesToRelease_.Add(handle);
+            }
+        }
+
         internal void ClaimContext()
         {
             if (handle_ == null)
                 throw new ObjectDisposedException(nameof(JavaScriptEngine));
 
-            Errors.ThrowIfIs(NativeMethods.JsSetCurrentContext(handle_));
+            Errors.ThrowIfIs(api_.JsSetCurrentContext(handle_));
+
+            if (handlesToRelease_.Count > 0)
+            {
+                lock(handleReleaseLock_)
+                {
+                    foreach (IntPtr handle in handlesToRelease_)
+                    {
+                        uint count;
+                        var error = api_.JsRelease(handle, out count);
+                        Debug.Assert(error == JsErrorCode.JsNoError);
+                    }
+
+                    handlesToRelease_.Clear();
+                }
+            }
         }
 
         internal JavaScriptValue CreateValueFromHandle(JavaScriptValueSafeHandle handle)
@@ -78,7 +133,7 @@ namespace Microsoft.Scripting.JavaScript
             ClaimContext();
 
             JsValueType kind;
-            Errors.ThrowIfIs(NativeMethods.JsGetValueType(handle, out kind));
+            Errors.ThrowIfIs(api_.JsGetValueType(handle, out kind));
 
             switch (kind)
             {
@@ -119,7 +174,7 @@ namespace Microsoft.Scripting.JavaScript
             ClaimContext();
 
             JsValueType kind;
-            Errors.ThrowIfIs(NativeMethods.JsGetValueType(handle, out kind));
+            Errors.ThrowIfIs(api_.JsGetValueType(handle, out kind));
 
             switch (kind)
             {
@@ -158,7 +213,7 @@ namespace Microsoft.Scripting.JavaScript
             ClaimContext();
 
             JsValueType kind;
-            Errors.ThrowIfIs(NativeMethods.JsGetValueType(handle, out kind));
+            Errors.ThrowIfIs(api_.JsGetValueType(handle, out kind));
 
             switch (kind)
             {
@@ -191,7 +246,7 @@ namespace Microsoft.Scripting.JavaScript
                 ClaimContext();
 
                 JavaScriptValueSafeHandle global;
-                Errors.ThrowIfIs(NativeMethods.JsGetGlobalObject(out global));
+                Errors.ThrowIfIs(api_.JsGetGlobalObject(out global));
 
                 return CreateObjectFromHandle(global);
             }
@@ -204,7 +259,7 @@ namespace Microsoft.Scripting.JavaScript
                 ClaimContext();
 
                 JavaScriptValueSafeHandle global;
-                Errors.ThrowIfIs(NativeMethods.JsGetUndefinedValue(out global));
+                Errors.ThrowIfIs(api_.JsGetUndefinedValue(out global));
 
                 return CreateValueFromHandle(global);
             }
@@ -217,7 +272,7 @@ namespace Microsoft.Scripting.JavaScript
                 ClaimContext();
 
                 JavaScriptValueSafeHandle global;
-                Errors.ThrowIfIs(NativeMethods.JsGetNullValue(out global));
+                Errors.ThrowIfIs(api_.JsGetNullValue(out global));
 
                 return CreateObjectFromHandle(global);
             }
@@ -230,7 +285,7 @@ namespace Microsoft.Scripting.JavaScript
                 ClaimContext();
 
                 JavaScriptValueSafeHandle global;
-                Errors.ThrowIfIs(NativeMethods.JsGetTrueValue(out global));
+                Errors.ThrowIfIs(api_.JsGetTrueValue(out global));
 
                 return CreateValueFromHandle(global);
             }
@@ -243,7 +298,7 @@ namespace Microsoft.Scripting.JavaScript
                 ClaimContext();
 
                 JavaScriptValueSafeHandle global;
-                Errors.ThrowIfIs(NativeMethods.JsGetFalseValue(out global));
+                Errors.ThrowIfIs(api_.JsGetFalseValue(out global));
 
                 return CreateValueFromHandle(global);
             }
@@ -256,7 +311,7 @@ namespace Microsoft.Scripting.JavaScript
                 ClaimContext();
 
                 bool has;
-                Errors.ThrowIfIs(NativeMethods.JsHasException(out has));
+                Errors.ThrowIfIs(api_.JsHasException(out has));
 
                 return has;
             }
@@ -266,37 +321,66 @@ namespace Microsoft.Scripting.JavaScript
         #region Code execution
         public JavaScriptFunction EvaluateScriptText(string code)
         {
-            // todo
-            return null;
+            return Evaluate(new ScriptSource("[eval code]", code));
         }
 
         public JavaScriptFunction Evaluate(ScriptSource source)
         {
-            // todo
-            return null;
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            ClaimContext();
+
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsParseScript(source.SourceText, source.SourceContextId, source.SourceLocation, out handle));
+
+            return CreateObjectFromHandle(handle) as JavaScriptFunction;
         }
 
         public JavaScriptFunction Evaluate(ScriptSource source, Stream compiledCode)
         {
-            // todo
-            return null;
+            throw new NotSupportedException();
         }
 
-        public void Compile(ScriptSource source, Stream compiledCodeDestination)
+        public unsafe void Compile(ScriptSource source, Stream compiledCodeDestination)
         {
-            // todo
+            ClaimContext();
+
+            uint bufferSize = 0;
+            Errors.ThrowIfIs(api_.JsSerializeScript(source.SourceText, IntPtr.Zero, ref bufferSize));
+            if (bufferSize > int.MaxValue)
+                throw new OutOfMemoryException();
+
+            IntPtr mem = Marshal.AllocCoTaskMem(unchecked((int)bufferSize));
+            var error = api_.JsSerializeScript(source.SourceText, mem, ref bufferSize);
+            if (error != JsErrorCode.JsNoError)
+            {
+                Marshal.FreeCoTaskMem(mem);
+                Errors.ThrowFor(error);
+            }
+
+            using (UnmanagedMemoryStream ums = new UnmanagedMemoryStream((byte*)mem.ToPointer(), bufferSize))
+            {
+                ums.CopyTo(compiledCodeDestination);
+            }
+            Marshal.FreeCoTaskMem(mem);
         }
 
         public JavaScriptValue Execute(ScriptSource source)
         {
-            // todo
-            return null;
+            if (source == null)
+                throw new ArgumentNullException(nameof(source));
+
+            ClaimContext();
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsRunScript(source.SourceText, source.SourceContextId, source.SourceLocation, out handle));
+
+            return CreateValueFromHandle(handle);
         }
 
         public JavaScriptValue Execute(ScriptSource source, Stream compiledCode)
         {
-            // todo
-            return null;
+            throw new NotSupportedException();
         }
         #endregion
 
@@ -306,20 +390,49 @@ namespace Microsoft.Scripting.JavaScript
             ClaimContext();
 
             JavaScriptValueSafeHandle handle;
-            Errors.ThrowIfIs(NativeMethods.JsCreateObject(out handle));
+            Errors.ThrowIfIs(api_.JsCreateObject(out handle));
 
             if (prototype != null)
             {
-                Errors.ThrowIfIs(NativeMethods.JsSetPrototype(handle, prototype.handle_));
+                Errors.ThrowIfIs(api_.JsSetPrototype(handle, prototype.handle_));
             }
 
             return CreateObjectFromHandle(handle);
         }
 
+        private static void FinalizerCallbackThunk(IntPtr externalData)
+        {
+            GCHandle handle = GCHandle.FromIntPtr(externalData);
+            var thunkData = handle.Target as ExternalObjectThunkData;
+            if (thunkData == null)
+                return;
+
+            var engine = thunkData.engine;
+            var callback = thunkData.callback;
+            object userData;
+            thunkData.userData.TryGetTarget(out userData);
+
+            if (callback != null)
+                callback(userData);
+
+            JavaScriptEngine eng;
+            if (engine.TryGetTarget(out eng))
+            {
+                eng.externalObjects_.Remove(thunkData);
+            }
+        }
+
         public JavaScriptObject CreateExternalObject(object externalData, JavaScriptExternalObjectFinalizeCallback finalizeCallback)
         {
-            // todo
-            return null;
+            ExternalObjectThunkData thunk = new ExternalObjectThunkData() { callback = finalizeCallback, engine = new WeakReference<JavaScriptEngine>(this), userData = new WeakReference<object>(externalData), };
+            GCHandle handle = GCHandle.Alloc(thunk);
+            externalObjects_.Add(thunk);
+
+            ClaimContext();
+            JavaScriptValueSafeHandle result;
+            Errors.ThrowIfIs(api_.JsCreateExternalObject(GCHandle.ToIntPtr(handle), NativeCallbackPtr, out result));
+
+            return CreateObjectFromHandle(result);
         }
 
         public JavaScriptSymbol CreateSymbol(string description)
@@ -327,7 +440,7 @@ namespace Microsoft.Scripting.JavaScript
             JavaScriptValueSafeHandle handle;
             using (var str = converter_.FromString(description))
             {
-                Errors.ThrowIfIs(NativeMethods.JsCreateSymbol(str.handle_, out handle));
+                Errors.ThrowIfIs(api_.JsCreateSymbol(str.handle_, out handle));
             }
 
             return CreateValueFromHandle(handle) as JavaScriptSymbol;
@@ -337,7 +450,7 @@ namespace Microsoft.Scripting.JavaScript
         {
             ClaimContext();
             uint nextTick;
-            Errors.ThrowIfIs(NativeMethods.JsIdle(out nextTick));
+            Errors.ThrowIfIs(api_.JsIdle(out nextTick));
 
             return TimeSpan.FromTicks(nextTick);
         }
@@ -388,45 +501,45 @@ namespace Microsoft.Scripting.JavaScript
             ClaimContext();
 
             JavaScriptValueSafeHandle handle;
-            Errors.ThrowIfIs(NativeMethods.JsCreateArray(unchecked((uint)length), out handle));
+            Errors.ThrowIfIs(api_.JsCreateArray(unchecked((uint)length), out handle));
 
             return CreateArrayFromHandle(handle);
         }
 
-        private static JavaScriptValueSafeHandle NativeCallbackThunk(
-            JavaScriptValueSafeHandle callee, 
+        private static IntPtr NativeCallbackThunk(
+            IntPtr callee, 
             [MarshalAs(UnmanagedType.U1)] bool asConstructor, 
-            [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] JavaScriptValueSafeHandle[] args, 
+            [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] IntPtr[] args, 
             ushort argCount, 
             IntPtr data)
         {
             // callee and args[0] are the same
             if (data == IntPtr.Zero)
-                return new JavaScriptValueSafeHandle(IntPtr.Zero);
+                return IntPtr.Zero;
 
             GCHandle handle = GCHandle.FromIntPtr(data);
             var nativeThunk = handle.Target as NativeFunctionThunkData;
             JavaScriptEngine engine;
             if (!nativeThunk.engine.TryGetTarget(out engine))
-                return new JavaScriptValueSafeHandle(IntPtr.Zero);
+                return IntPtr.Zero;
 
             JavaScriptValue thisValue = null;
             if (argCount > 0)
             {
-                thisValue = engine.CreateValueFromHandle(args[0]);
+                thisValue = engine.CreateValueFromHandle(new JavaScriptValueSafeHandle(args[0]));
             }
 
             try
             {
-                var result = nativeThunk.callback(engine, asConstructor, thisValue, args.Skip(1).Select(h => engine.CreateValueFromHandle(h)));
-                return result.handle_;
+                var result = nativeThunk.callback(engine, asConstructor, thisValue, args.Skip(1).Select(h => engine.CreateValueFromHandle(new JavaScriptValueSafeHandle(h))));
+                return result.handle_.DangerousGetHandle();
             }
             catch (Exception ex)
             {
                 var error = engine.CreateError(ex.Message);
                 engine.SetException(error);
 
-                return engine.UndefinedValue.handle_;
+                return engine.UndefinedValue.handle_.DangerousGetHandle();
             }
         }
 
@@ -442,7 +555,7 @@ namespace Microsoft.Scripting.JavaScript
             nativeFunctionThunks_.Add(td);
 
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsCreateFunction(NativeCallbackPtr, GCHandle.ToIntPtr(handle), out resultHandle));
+            Errors.ThrowIfIs(api_.JsCreateFunction(NativeCallbackPtr, GCHandle.ToIntPtr(handle), out resultHandle));
 
             return CreateObjectFromHandle(resultHandle) as JavaScriptFunction;
         }
@@ -463,64 +576,92 @@ namespace Microsoft.Scripting.JavaScript
             nativeFunctionThunks_.Add(td);
 
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsCreateNamedFunction(nameVal.handle_, NativeCallbackPtr, GCHandle.ToIntPtr(handle), out resultHandle));
+            Errors.ThrowIfIs(api_.JsCreateNamedFunction(nameVal.handle_, NativeCallbackPtr, GCHandle.ToIntPtr(handle), out resultHandle));
 
             return CreateObjectFromHandle(resultHandle) as JavaScriptFunction;
         }
 
         public JavaScriptValue GetAndClearException()
         {
-            // todo
-            return null;
+            ClaimContext();
+
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsGetAndClearException(out handle));
+
+            return CreateValueFromHandle(handle);
         }
 
         public void SetException(JavaScriptValue exception)
         {
-            // todo
+            if (exception == null)
+                throw new ArgumentNullException(nameof(exception));
+
+            ClaimContext();
+            Errors.ThrowIfIs(api_.JsSetException(exception.handle_));
         }
         #endregion
 
         #region Errors
-        public JavaScriptObject CreateError(string message)
+        public JavaScriptObject CreateError(string message = "")
         {
-            // todo
-            return null;
+            var str = Converter.FromString(message ?? "");
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsCreateError(str.handle_, out handle));
+
+            return CreateObjectFromHandle(handle);
         }
 
-        public JavaScriptObject CreateRangeError(string message)
+        public JavaScriptObject CreateRangeError(string message = "")
         {
-            // todo
-            return null;
+            var str = Converter.FromString(message ?? "");
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsCreateRangeError(str.handle_, out handle));
+
+            return CreateObjectFromHandle(handle);
         }
 
-        public JavaScriptObject CreateReferenceError(string message)
+        public JavaScriptObject CreateReferenceError(string message = "")
         {
-            // todo
-            return null;
+            var str = Converter.FromString(message ?? "");
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsCreateReferenceError(str.handle_, out handle));
+
+            return CreateObjectFromHandle(handle);
         }
 
-        public JavaScriptObject CreateSyntaxError(string message)
+        public JavaScriptObject CreateSyntaxError(string message = "")
         {
-            // todo
-            return null;
+            var str = Converter.FromString(message ?? "");
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsCreateSyntaxError(str.handle_, out handle));
+
+            return CreateObjectFromHandle(handle);
         }
 
-        public JavaScriptObject CreateTypeError(string message)
+        public JavaScriptObject CreateTypeError(string message = "")
         {
-            // todo
-            return null;
+            var str = Converter.FromString(message ?? "");
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsCreateTypeError(str.handle_, out handle));
+
+            return CreateObjectFromHandle(handle);
         }
 
-        public JavaScriptObject CreateUriError(string message)
+        public JavaScriptObject CreateUriError(string message = "")
         {
-            // todo
-            return null;
+            var str = Converter.FromString(message ?? "");
+            JavaScriptValueSafeHandle handle;
+            Errors.ThrowIfIs(api_.JsCreateURIError(str.handle_, out handle));
+
+            return CreateObjectFromHandle(handle);
         }
         #endregion
 
         public void EnableDebugging()
         {
-            // todo
+            ClaimContext();
+
+            Errors.ThrowIfIs(api_.JsStartDebugging());
         }
 
         #region IDisposable implementation

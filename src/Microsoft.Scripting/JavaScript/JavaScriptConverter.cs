@@ -11,10 +11,12 @@ namespace Microsoft.Scripting.JavaScript
     public sealed class JavaScriptConverter
     {
         private WeakReference<JavaScriptEngine> engine_;
+        private ChakraApi api_;
 
         public JavaScriptConverter(JavaScriptEngine engine)
         {
             engine_ = new WeakReference<JavaScriptEngine>(engine);
+            api_ = engine.Api;
         }
 
         private JavaScriptEngine GetEngine()
@@ -45,15 +47,15 @@ namespace Microsoft.Scripting.JavaScript
             
             if (value.Type == JavaScriptValueType.Boolean)
             {
-                Errors.ThrowIfIs(NativeMethods.JsBooleanToBool(value.handle_, out result));
+                Errors.ThrowIfIs(api_.JsBooleanToBool(value.handle_, out result));
             }
             else
             {
                 JavaScriptValueSafeHandle tempBool;
-                Errors.ThrowIfIs(NativeMethods.JsConvertValueToBoolean(value.handle_, out tempBool));
+                Errors.ThrowIfIs(api_.JsConvertValueToBoolean(value.handle_, out tempBool));
                 using (tempBool)
                 {
-                    Errors.ThrowIfIs(NativeMethods.JsBooleanToBool(tempBool, out result));
+                    Errors.ThrowIfIs(api_.JsBooleanToBool(tempBool, out result));
                 }
             }
 
@@ -80,15 +82,15 @@ namespace Microsoft.Scripting.JavaScript
 
             if (value.Type == JavaScriptValueType.Number)
             {
-                Errors.ThrowIfIs(NativeMethods.JsNumberToDouble(value.handle_, out result));
+                Errors.ThrowIfIs(api_.JsNumberToDouble(value.handle_, out result));
             }
             else
             {
                 JavaScriptValueSafeHandle tempVal;
-                Errors.ThrowIfIs(NativeMethods.JsConvertValueToNumber(value.handle_, out tempVal));
+                Errors.ThrowIfIs(api_.JsConvertValueToNumber(value.handle_, out tempVal));
                 using (tempVal)
                 {
-                    Errors.ThrowIfIs(NativeMethods.JsNumberToDouble(tempVal, out result));
+                    Errors.ThrowIfIs(api_.JsNumberToDouble(tempVal, out result));
                 }
             }
 
@@ -100,7 +102,7 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             JavaScriptValueSafeHandle result;
-            Errors.ThrowIfIs(NativeMethods.JsDoubleToNumber(value, out result));
+            Errors.ThrowIfIs(api_.JsDoubleToNumber(value, out result));
 
             return eng.CreateValueFromHandle(result);
         }
@@ -116,15 +118,15 @@ namespace Microsoft.Scripting.JavaScript
 
             if (value.Type == JavaScriptValueType.Number)
             {
-                Errors.ThrowIfIs(NativeMethods.JsNumberToInt(value.handle_, out result));
+                Errors.ThrowIfIs(api_.JsNumberToInt(value.handle_, out result));
             }
             else
             {
                 JavaScriptValueSafeHandle tempVal;
-                Errors.ThrowIfIs(NativeMethods.JsConvertValueToNumber(value.handle_, out tempVal));
+                Errors.ThrowIfIs(api_.JsConvertValueToNumber(value.handle_, out tempVal));
                 using (tempVal)
                 {
-                    Errors.ThrowIfIs(NativeMethods.JsNumberToInt(tempVal, out result));
+                    Errors.ThrowIfIs(api_.JsNumberToInt(tempVal, out result));
                 }
             }
 
@@ -136,7 +138,7 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             JavaScriptValueSafeHandle result;
-            Errors.ThrowIfIs(NativeMethods.JsIntToNumber(value, out result));
+            Errors.ThrowIfIs(api_.JsIntToNumber(value, out result));
 
             return eng.CreateValueFromHandle(result);
         }
@@ -151,7 +153,7 @@ namespace Microsoft.Scripting.JavaScript
             {
                 void* str;
                 uint len;
-                Errors.ThrowIfIs(NativeMethods.JsStringToPointer(value.handle_, out str, out len));
+                Errors.ThrowIfIs(api_.JsStringToPointer(value.handle_, out str, out len));
                 if (len > int.MaxValue)
                     throw new OutOfMemoryException("Exceeded maximum string length.");
 
@@ -168,12 +170,12 @@ namespace Microsoft.Scripting.JavaScript
             else
             {
                 JavaScriptValueSafeHandle tempStr;
-                Errors.ThrowIfIs(NativeMethods.JsConvertValueToString(value.handle_, out tempStr));
+                Errors.ThrowIfIs(api_.JsConvertValueToString(value.handle_, out tempStr));
                 using (tempStr)
                 {
                     void* str;
                     uint len;
-                    Errors.ThrowIfIs(NativeMethods.JsStringToPointer(value.handle_, out str, out len));
+                    Errors.ThrowIfIs(api_.JsStringToPointer(value.handle_, out str, out len));
                     if (len > int.MaxValue)
                         throw new OutOfMemoryException("Exceeded maximum string length.");
 
@@ -190,10 +192,54 @@ namespace Microsoft.Scripting.JavaScript
             var encoded = Encoding.Unicode.GetBytes(value);
             fixed (byte* ptr = &encoded[0])
             {
-                Errors.ThrowIfIs(NativeMethods.JsPointerToString(ptr, value.Length, out result));
+                Errors.ThrowIfIs(api_.JsPointerToString(ptr, value.Length, out result));
             }
 
             return eng.CreateValueFromHandle(result);
+        }
+
+        public JavaScriptValue FromObject(object o)
+        {
+            var eng = GetEngine();
+            if (o == null)
+            {
+                return eng.NullValue;
+            }
+
+            var jsVal = o as JavaScriptValue;
+            if (jsVal != null)
+                return jsVal;
+
+            Type t = o.GetType();
+            if (t == typeof(string))
+            {
+                return FromString((string)o);
+            }
+            else if (t == typeof(double) || t == typeof(float))
+            {
+                return FromDouble((double)o);
+            }
+            else if (t == typeof(int) || t == typeof(short) || t == typeof(ushort) || t == typeof(byte) || t == typeof(sbyte))
+            {
+                return FromInt32((int)o);
+            }
+            else if (t == typeof(uint))
+            {
+                return FromDouble((uint)o);
+            }
+            else if (t == typeof(long))
+            {
+                return FromDouble((long)o);
+            }
+            else if (t == typeof(bool))
+            {
+                bool b = (bool)o;
+                return b ? eng.TrueValue : eng.FalseValue;
+            }
+            else
+            {
+                throw new NotSupportedException("Could not convert a non-primitive type.");
+            }
         }
     }
 }

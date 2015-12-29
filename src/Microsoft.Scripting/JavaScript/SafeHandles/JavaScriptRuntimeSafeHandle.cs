@@ -10,7 +10,13 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
 {
     internal sealed class JavaScriptRuntimeSafeHandle : SafeHandle
     {
-        internal JavaScriptRuntimeSafeHandle(IntPtr handle):
+        public JavaScriptRuntimeSafeHandle():
+            base(IntPtr.Zero, ownsHandle: true)
+        {
+
+        }
+
+        public JavaScriptRuntimeSafeHandle(IntPtr handle):
             base(handle, true)
         {
 
@@ -29,8 +35,10 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
             if (IsInvalid)
                 return false;
 
-            var error = NativeMethods.JsDisposeRuntime(handle);
+            var error = ChakraApi.Instance.JsSetCurrentContext(new JavaScriptEngineSafeHandle(IntPtr.Zero));
+            Debug.Assert(error == JsErrorCode.JsNoError);
 
+            error = ChakraApi.Instance.JsDisposeRuntime(handle);
             Debug.Assert(error == JsErrorCode.JsNoError);
             return true;
         }

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Dynamic;
 
 namespace Microsoft.Scripting.JavaScript
 {
@@ -32,7 +33,7 @@ namespace Microsoft.Scripting.JavaScript
                 var eng = GetEngineAndClaimContext();
 
                 bool result;
-                Errors.ThrowIfIs(NativeMethods.JsGetExtensionAllowed(handle_, out result));
+                Errors.ThrowIfIs(api_.JsGetExtensionAllowed(handle_, out result));
 
                 return result;
             }
@@ -45,7 +46,7 @@ namespace Microsoft.Scripting.JavaScript
                 var eng = GetEngineAndClaimContext();
 
                 JavaScriptValueSafeHandle handle;
-                Errors.ThrowIfIs(NativeMethods.JsGetPrototype(handle_, out handle));
+                Errors.ThrowIfIs(api_.JsGetPrototype(handle_, out handle));
 
                 return eng.CreateObjectFromHandle(handle);
             }
@@ -55,7 +56,7 @@ namespace Microsoft.Scripting.JavaScript
                 if (value == null)
                     value = eng.NullValue;
 
-                Errors.ThrowIfIs(NativeMethods.JsSetPrototype(handle_, value.handle_));
+                Errors.ThrowIfIs(api_.JsSetPrototype(handle_, value.handle_));
             }
         }
 
@@ -132,10 +133,10 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromName(propertyName, out propId));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
 
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsGetProperty(handle_, propId, out resultHandle));
+            Errors.ThrowIfIs(api_.JsGetProperty(handle_, propId, out resultHandle));
 
             return eng.CreateValueFromHandle(resultHandle);
         }
@@ -145,8 +146,8 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromName(propertyName, out propId));
-            Errors.ThrowIfIs(NativeMethods.JsSetProperty(handle_, propId, value.handle_, false));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
+            Errors.ThrowIfIs(api_.JsSetProperty(handle_, propId, value.handle_, false));
         }
         
         public void DeletePropertyByName(string propertyName)
@@ -154,11 +155,23 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromName(propertyName, out propId));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
 
             JavaScriptValueSafeHandle tmpResult;
-            Errors.ThrowIfIs(NativeMethods.JsDeleteProperty(handle_, propId, false, out tmpResult));
+            Errors.ThrowIfIs(api_.JsDeleteProperty(handle_, propId, false, out tmpResult));
             tmpResult.Dispose();
+        }
+
+        public JavaScriptValue this[string name]
+        {
+            get
+            {
+                return GetPropertyByName(name);
+            }
+            set
+            {
+                SetPropertyByName(name, value);
+            }
         }
 
         public JavaScriptValue GetPropertyBySymbol(JavaScriptSymbol symbol)
@@ -166,10 +179,10 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
 
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsGetProperty(handle_, propId, out resultHandle));
+            Errors.ThrowIfIs(api_.JsGetProperty(handle_, propId, out resultHandle));
 
             return eng.CreateValueFromHandle(resultHandle);
         }
@@ -179,8 +192,8 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
-            Errors.ThrowIfIs(NativeMethods.JsSetProperty(handle_, propId, value.handle_, false));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
+            Errors.ThrowIfIs(api_.JsSetProperty(handle_, propId, value.handle_, false));
         }
 
         public void DeletePropertyBySymbol(JavaScriptSymbol symbol)
@@ -188,11 +201,23 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
 
             JavaScriptValueSafeHandle tmpResult;
-            Errors.ThrowIfIs(NativeMethods.JsDeleteProperty(handle_, propId, false, out tmpResult));
+            Errors.ThrowIfIs(api_.JsDeleteProperty(handle_, propId, false, out tmpResult));
             tmpResult.Dispose();
+        }
+
+        public JavaScriptValue this[JavaScriptSymbol symbol]
+        {
+            get
+            {
+                return GetPropertyBySymbol(symbol);
+            }
+            set
+            {
+                SetPropertyBySymbol(symbol, value);
+            }
         }
 
         public JavaScriptValue GetValueAtIndex(JavaScriptValue index)
@@ -202,7 +227,7 @@ namespace Microsoft.Scripting.JavaScript
 
             var eng = GetEngineAndClaimContext();
             JavaScriptValueSafeHandle result;
-            Errors.ThrowIfIs(NativeMethods.JsGetIndexedProperty(handle_, index.handle_, out result));
+            Errors.ThrowIfIs(api_.JsGetIndexedProperty(handle_, index.handle_, out result));
 
             return eng.CreateValueFromHandle(result);
         }
@@ -216,7 +241,7 @@ namespace Microsoft.Scripting.JavaScript
             if (value == null)
                 value = eng.NullValue;
 
-            Errors.ThrowIfIs(NativeMethods.JsSetIndexedProperty(handle_, index.handle_, value.handle_));
+            Errors.ThrowIfIs(api_.JsSetIndexedProperty(handle_, index.handle_, value.handle_));
         }
 
         public void DeleteValueAtIndex(JavaScriptValue index)
@@ -225,7 +250,19 @@ namespace Microsoft.Scripting.JavaScript
                 throw new ArgumentNullException(nameof(index));
 
             GetEngineAndClaimContext(); // unused but the call is needed to claim the context
-            Errors.ThrowIfIs(NativeMethods.JsDeleteIndexedProperty(handle_, index.handle_));
+            Errors.ThrowIfIs(api_.JsDeleteIndexedProperty(handle_, index.handle_));
+        }
+
+        public JavaScriptValue this[JavaScriptValue index]
+        {
+            get
+            {
+                return GetValueAtIndex(index);
+            }
+            set
+            {
+                SetValueAtIndex(index, value);
+            }
         }
 
         public bool HasOwnProperty(string propertyName)
@@ -240,9 +277,9 @@ namespace Microsoft.Scripting.JavaScript
         {
             GetEngineAndClaimContext();
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromName(propertyName, out propId));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
             bool has;
-            Errors.ThrowIfIs(NativeMethods.JsHasProperty(handle_, propId, out has));
+            Errors.ThrowIfIs(api_.JsHasProperty(handle_, propId, out has));
 
             return has;
         }
@@ -251,9 +288,9 @@ namespace Microsoft.Scripting.JavaScript
         {
             var eng = GetEngineAndClaimContext();
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromName(propertyName, out propId));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsGetOwnPropertyDescriptor(handle_, propId, out resultHandle));
+            Errors.ThrowIfIs(api_.JsGetOwnPropertyDescriptor(handle_, propId, out resultHandle));
 
             return eng.CreateObjectFromHandle(resultHandle);
         }
@@ -266,10 +303,10 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             IntPtr propId;
-            Errors.ThrowIfIs(NativeMethods.JsGetPropertyIdFromName(propertyName, out propId));
+            Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
 
             bool wasSet;
-            Errors.ThrowIfIs(NativeMethods.JsDefineProperty(handle_, propId, descriptor.handle_, out wasSet));
+            Errors.ThrowIfIs(api_.JsDefineProperty(handle_, propId, descriptor.handle_, out wasSet));
         }
 
         public void DefineProperties(JavaScriptObject propertiesContainer)
@@ -285,7 +322,7 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsGetOwnPropertyNames(handle_, out resultHandle));
+            Errors.ThrowIfIs(api_.JsGetOwnPropertyNames(handle_, out resultHandle));
 
             return eng.CreateArrayFromHandle(resultHandle);
         }
@@ -295,7 +332,7 @@ namespace Microsoft.Scripting.JavaScript
             var eng = GetEngineAndClaimContext();
 
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(NativeMethods.JsGetOwnPropertySymbols(handle_, out resultHandle));
+            Errors.ThrowIfIs(api_.JsGetOwnPropertySymbols(handle_, out resultHandle));
 
             return eng.CreateArrayFromHandle(resultHandle);
         }
@@ -304,7 +341,7 @@ namespace Microsoft.Scripting.JavaScript
         {
             GetEngineAndClaimContext();
 
-            Errors.ThrowIfIs(NativeMethods.JsPreventExtension(handle_));
+            Errors.ThrowIfIs(api_.JsPreventExtension(handle_));
         }
 
         public void Seal()
@@ -322,6 +359,82 @@ namespace Microsoft.Scripting.JavaScript
 
             fn.Invoke(new JavaScriptValue[] { eng.UndefinedValue, this });
         }
+
+        #region DynamicObject overrides
+        public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
+        {
+            var fn = GetPropertyByName(binder.Name) as JavaScriptFunction;
+            var eng = GetEngine();
+            var c = eng.Converter;
+
+            if (fn != null)
+            {
+                result = fn.Invoke(args.Select(a => c.FromObject(a)));
+                return true;
+            }
+            return base.TryInvokeMember(binder, args, out result);
+        }
+
+        public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
+        {
+            if (indexes.Length > 1)
+                return base.TryGetIndex(binder, indexes, out result);
+
+            var eng = GetEngine();
+            var jsIndex = eng.Converter.FromObject(indexes[0]);
+            result = GetValueAtIndex(jsIndex);
+            return true;
+        }
+
+        public override bool TrySetIndex(SetIndexBinder binder, object[] indexes, object value)
+        {
+            if (indexes.Length > 1)
+                return base.TrySetIndex(binder, indexes, value);
+
+            var eng = GetEngine();
+            var jsIndex = eng.Converter.FromObject(indexes[0]);
+            var jsVal = eng.Converter.FromObject(value);
+            SetValueAtIndex(jsIndex, jsVal);
+
+            return true;
+        }
+
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            result = GetPropertyByName(binder.Name);
+            return true;
+        }
+
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            var jsVal = GetEngine().Converter.FromObject(value);
+            SetPropertyByName(binder.Name, jsVal);
+
+            return true;
+        }
+
+        public override bool TryDeleteMember(DeleteMemberBinder binder)
+        {
+            DeletePropertyByName(binder.Name);
+            return true;
+        }
+
+        public override bool TryDeleteIndex(DeleteIndexBinder binder, object[] indexes)
+        {
+            if (indexes.Length > 1)
+                return base.TryDeleteIndex(binder, indexes);
+
+            var jsIndex = GetEngine().Converter.FromObject(indexes[0]);
+            DeleteValueAtIndex(jsIndex);
+
+            return true;
+        }
+
+        public override IEnumerable<string> GetDynamicMemberNames()
+        {
+            return Keys.Select(v => v.ToString());
+        }
+        #endregion
 
     }
 }

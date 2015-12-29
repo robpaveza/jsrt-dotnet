@@ -70,7 +70,7 @@ namespace Microsoft.Scripting.JavaScript
             JavaScriptTypedArrayType type;
             int elemSize;
 
-            Errors.ThrowIfIs(NativeMethods.JsGetTypedArrayStorage(handle_, out buf, out len, out type, out elemSize));
+            Errors.ThrowIfIs(api_.JsGetTypedArrayStorage(handle_, out buf, out len, out type, out elemSize));
 
             return type;
         }

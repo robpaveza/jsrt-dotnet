@@ -10,7 +10,13 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
 {
     internal class JavaScriptEngineSafeHandle : SafeHandle
     {
-        internal JavaScriptEngineSafeHandle(IntPtr handle):
+        public JavaScriptEngineSafeHandle() :
+            base(IntPtr.Zero, ownsHandle: true)
+        {
+
+        }
+
+        public JavaScriptEngineSafeHandle(IntPtr handle):
             base(handle, true)
         {
 
@@ -30,7 +36,7 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
                 return false;
 
             uint count;
-            var error = NativeMethods.JsRelease(handle, out count);
+            var error = ChakraApi.Instance.JsRelease(handle, out count);
 
             Debug.Assert(error == JsErrorCode.JsNoError);
             return true;
