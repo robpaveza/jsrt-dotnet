@@ -47,8 +47,19 @@ namespace ConsoleHost
                 //Console.WriteLine("age: {0}", age);
 
                 // Is it possible to pass a JavaScriptObject back in?
-                var getName = engine.EvaluateScriptText(@"(function(person){ return person.name; })();");
-                var n = getName.Invoke(new []{ person }); // JsErrorScriptException
+                var getName = engine.EvaluateScriptText(@"(function(person){ return person.name; });");
+                Console.WriteLine("getName type: {0}", getName.Type); // Function
+
+                var getName2 = getName.Invoke(Enumerable.Empty<JavaScriptValue>()); // JsErrorScriptException
+                Console.WriteLine("getName2 type: {0}", getName2.Type); // Function
+
+                var getName3 = ((JavaScriptFunction)getName2).Invoke(new []{ person }); // JsErrorScriptException
+                Console.WriteLine("getName3 type: {0}", getName3.Type); // String
+                Console.WriteLine("getName3: {0}", getName3); // Cameron
+
+                
+
+                //Console.WriteLine("n: {0}", n.ToString());
 
 
                 //dynamic fnAsDynamic = fn;
