@@ -26,14 +26,6 @@ namespace Microsoft.Scripting.JavaScript
             return result;
         }
 
-        internal JavaScriptEngine GetEngineAndClaimContext()
-        {
-            var result = GetEngine();
-            result.ClaimContext();
-
-            return result;
-        }
-
         internal JavaScriptValue(JavaScriptValueSafeHandle handle, JavaScriptValueType type, JavaScriptEngine engine)
         {
             Debug.Assert(handle != null);
@@ -72,7 +64,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public bool SimpleEquals(JavaScriptValue other)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             bool result;
             Errors.ThrowIfIs(api_.JsEquals(this.handle_, other.handle_, out result));
 
@@ -81,7 +73,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public bool StrictEquals(JavaScriptValue other)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             bool result;
             Errors.ThrowIfIs(api_.JsStrictEquals(this.handle_, other.handle_, out result));
 
@@ -92,7 +84,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public override bool TryConvert(ConvertBinder binder, out object result)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             if (binder.Type == typeof(int))
             {
                 result = eng.Converter.ToInt32(this);

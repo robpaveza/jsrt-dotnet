@@ -41,7 +41,7 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
 
         protected override bool ReleaseHandle()
         {
-            if (IsInvalid)
+            if (IsInvalid || engine_ == null)
                 return false;
 
             JavaScriptEngine eng;
