@@ -10,13 +10,13 @@ namespace Microsoft.Scripting.JavaScript
     {
         private bool cancelled_;
 
-        internal JavaScriptMemoryAllocationEventArgs(ulong amount, JavaScriptMemoryAllocationEventType type)
+        internal JavaScriptMemoryAllocationEventArgs(UIntPtr amount, JavaScriptMemoryAllocationEventType type)
         {
             Amount = amount;
             Type = type;
         }
 
-        public ulong Amount
+        public UIntPtr Amount
         {
             get;
             private set;

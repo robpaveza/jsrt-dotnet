@@ -657,8 +657,19 @@ namespace Microsoft.Scripting.JavaScript
         }
         #endregion
 
+        public bool CanEnableDebugging
+        {
+            get
+            {
+                return api_.JsStartDebugging != null;
+            }
+        }
+
         public void EnableDebugging()
         {
+            if (api_.JsStartDebugging == null)
+                throw new NotSupportedException("Debugging is not supported with ChakraCore.  Check the CanEnableDebugging property before attempting to enable debugging.");
+
             ClaimContext();
 
             Errors.ThrowIfIs(api_.JsStartDebugging());

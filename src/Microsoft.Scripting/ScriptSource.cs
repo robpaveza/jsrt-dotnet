@@ -9,7 +9,7 @@ namespace Microsoft.Scripting
 {
     public class ScriptSource
     {
-        private static long sourceContextId = 0;
+        private static IntPtr sourceContextId = IntPtr.Zero;
 
         public ScriptSource(string sourceLocation, string sourceText)
         {
@@ -20,6 +20,19 @@ namespace Microsoft.Scripting
 
             SourceLocation = sourceLocation;
             SourceText = sourceText;
+
+            while (true)
+            {
+                IntPtr mySrcContextId = sourceContextId;
+                IntPtr incremented = (sourceContextId + 1);
+
+                Interlocked.CompareExchange(ref sourceContextId, incremented, mySrcContextId);
+                if (sourceContextId == incremented)
+                {
+                    SourceContextId = mySrcContextId;
+                    break;
+                }
+            }
         }
 
         public string SourceLocation
@@ -34,9 +47,10 @@ namespace Microsoft.Scripting
             private set;
         }
 
-        internal long SourceContextId
+        internal IntPtr SourceContextId
         {
             get;
-        } = Interlocked.Increment(ref sourceContextId);
+            private set;
+        }
     }
 }
