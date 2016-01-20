@@ -216,7 +216,7 @@ namespace Microsoft.Scripting
     } */
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    internal delegate bool MemoryCallbackThunkCallback(IntPtr callbackState, JavaScriptMemoryAllocationEventType allocationEvent, ulong allocationSize);
+    internal delegate bool MemoryCallbackThunkCallback(IntPtr callbackState, JavaScriptMemoryAllocationEventType allocationEvent, UIntPtr allocationSize);
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     internal delegate IntPtr NativeFunctionThunkCallback(

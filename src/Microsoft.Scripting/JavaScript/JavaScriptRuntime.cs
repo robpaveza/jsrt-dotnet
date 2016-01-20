@@ -151,7 +151,7 @@ namespace Microsoft.Scripting.JavaScript
             MemoryCallbackThunkPtr = Marshal.GetFunctionPointerForDelegate(MemoryCallbackThunkDelegate);
         }
 
-        private static bool MemoryCallbackThunk(IntPtr callbackState, JavaScriptMemoryAllocationEventType allocationEvent, ulong allocationSize)
+        private static bool MemoryCallbackThunk(IntPtr callbackState, JavaScriptMemoryAllocationEventType allocationEvent, UIntPtr allocationSize)
         {
             GCHandle handle = GCHandle.FromIntPtr(callbackState);
             JavaScriptRuntime runtime = handle.Target as JavaScriptRuntime;

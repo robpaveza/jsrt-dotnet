@@ -1,233 +1,234 @@
-﻿namespace Microsoft.Scripting
-{
-    using System;
-    using System.IO;
-    using System.Runtime.InteropServices;
+﻿using System;
+using System.IO;
+using System.Runtime.InteropServices;
 
+using Microsoft.Scripting.JavaScript.SafeHandles;
 
+namespace Microsoft.Scripting
+{    
     internal sealed class ChakraApi
     {
         #region API method type definitions
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetFalseValue(out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle globalHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetFalseValue(out JavaScriptValueSafeHandle globalHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsHasException([System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] out bool has);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsHasException([MarshalAsAttribute(UnmanagedType.U1)] out bool has);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateObject(out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateObject(out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateExternalObject(System.IntPtr data, System.IntPtr finalizeCallback, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle handle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateExternalObject(IntPtr data, IntPtr finalizeCallback, out JavaScriptValueSafeHandle handle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateSymbol(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle descriptionHandle, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateSymbol(JavaScriptValueSafeHandle descriptionHandle, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateArray(uint length, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateArray(uint length, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateFunction(System.IntPtr callback, System.IntPtr extraData, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateFunction(IntPtr callback, IntPtr extraData, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateNamedFunction(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle nameHandle, System.IntPtr callback, System.IntPtr extraData, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateNamedFunction(JavaScriptValueSafeHandle nameHandle, IntPtr callback, IntPtr extraData, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsIdle(out uint nextTick);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsIdle(out uint nextTick);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetAndClearException(out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetAndClearException(out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsSetException(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle exception);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSetException(JavaScriptValueSafeHandle exception);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateError(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle message, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateRangeError(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle message, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateRangeError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateReferenceError(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle message, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateReferenceError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateSyntaxError(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle message, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateSyntaxError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateTypeError(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle message, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateTypeError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateURIError(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle message, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateURIError(JavaScriptValueSafeHandle message, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsStartDebugging();
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsStartDebugging();
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsParseScript([System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string script, long sourceContextId, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string sourceUrl, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle handle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsParseScript([MarshalAsAttribute(UnmanagedType.LPWStr)] string script, IntPtr sourceContextId, [MarshalAsAttribute(UnmanagedType.LPWStr)] string sourceUrl, out JavaScriptValueSafeHandle handle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsParseSerializedScript([System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string script, System.IntPtr buffer, long sourceContext, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string sourceUrl, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle handle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsParseSerializedScript([MarshalAsAttribute(UnmanagedType.LPWStr)] string script, IntPtr buffer, IntPtr sourceContext, [MarshalAsAttribute(UnmanagedType.LPWStr)] string sourceUrl, out JavaScriptValueSafeHandle handle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsSerializeScript([System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string script, System.IntPtr buffer, ref uint bufferSize);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSerializeScript([MarshalAsAttribute(UnmanagedType.LPWStr)] string script, IntPtr buffer, ref uint bufferSize);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsRunScript([System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string script, long sourceContextId, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string sourceUrl, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle handle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsRunScript([MarshalAsAttribute(UnmanagedType.LPWStr)] string script, IntPtr sourceContextId, [MarshalAsAttribute(UnmanagedType.LPWStr)] string sourceUrl, out JavaScriptValueSafeHandle handle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsRunSerializedScript([System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string script, System.IntPtr buffer, long sourceContext, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string sourceUrl, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle handle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsRunSerializedScript([MarshalAsAttribute(UnmanagedType.LPWStr)] string script, IntPtr buffer, IntPtr sourceContext, [MarshalAsAttribute(UnmanagedType.LPWStr)] string sourceUrl, out JavaScriptValueSafeHandle handle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCallFunction(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle fnHandle, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPArray, SizeParamIndex = 2)] IntPtr[] arguments, ushort argCount, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCallFunction(JavaScriptValueSafeHandle fnHandle, [MarshalAsAttribute(UnmanagedType.LPArray, SizeParamIndex = 2)] IntPtr[] arguments, ushort argCount, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsConstructObject(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle fnHandle, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPArray, SizeParamIndex = 2)] IntPtr[] arguments, ushort argCount, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsConstructObject(JavaScriptValueSafeHandle fnHandle, [MarshalAsAttribute(UnmanagedType.LPArray, SizeParamIndex = 2)] IntPtr[] arguments, ushort argCount, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetPropertyIdFromName([System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.LPWStr)] string propertyName, out System.IntPtr propertyId);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetPropertyIdFromName([MarshalAsAttribute(UnmanagedType.LPWStr)] string propertyName, out IntPtr propertyId);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetPropertyIdFromSymbol(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle valueHandle, out System.IntPtr propertyId);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetPropertyIdFromSymbol(JavaScriptValueSafeHandle valueHandle, out IntPtr propertyId);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetProperty(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, System.IntPtr propertyId, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetProperty(JavaScriptValueSafeHandle obj, IntPtr propertyId, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsSetProperty(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, System.IntPtr propertyId, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle propertyValue, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] bool useStrictSemantics);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSetProperty(JavaScriptValueSafeHandle obj, IntPtr propertyId, JavaScriptValueSafeHandle propertyValue, [MarshalAsAttribute(UnmanagedType.U1)] bool useStrictSemantics);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsDeleteProperty(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, System.IntPtr propertyId, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] bool useStrictSemantics, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsDeleteProperty(JavaScriptValueSafeHandle obj, IntPtr propertyId, [MarshalAsAttribute(UnmanagedType.U1)] bool useStrictSemantics, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetIndexedProperty(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle index, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetIndexedProperty(JavaScriptValueSafeHandle obj, JavaScriptValueSafeHandle index, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsSetIndexedProperty(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle index, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle value);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSetIndexedProperty(JavaScriptValueSafeHandle obj, JavaScriptValueSafeHandle index, JavaScriptValueSafeHandle value);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsDeleteIndexedProperty(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle index);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsDeleteIndexedProperty(JavaScriptValueSafeHandle obj, JavaScriptValueSafeHandle index);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsHasProperty(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, System.IntPtr propertyId, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] out bool has);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsHasProperty(JavaScriptValueSafeHandle obj, IntPtr propertyId, [MarshalAsAttribute(UnmanagedType.U1)] out bool has);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetOwnPropertyDescriptor(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, System.IntPtr propertyId, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle descriptor);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetOwnPropertyDescriptor(JavaScriptValueSafeHandle obj, IntPtr propertyId, out JavaScriptValueSafeHandle descriptor);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsDefineProperty(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, System.IntPtr propId, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle descriptorRef, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] out bool wasSet);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsDefineProperty(JavaScriptValueSafeHandle obj, IntPtr propId, JavaScriptValueSafeHandle descriptorRef, [MarshalAsAttribute(UnmanagedType.U1)] out bool wasSet);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetOwnPropertyNames(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetOwnPropertyNames(JavaScriptValueSafeHandle obj, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetOwnPropertySymbols(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetOwnPropertySymbols(JavaScriptValueSafeHandle obj, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsPreventExtension(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsPreventExtension(JavaScriptValueSafeHandle obj);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetExtensionAllowed(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] out bool allowed);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetExtensionAllowed(JavaScriptValueSafeHandle obj, [MarshalAsAttribute(UnmanagedType.U1)] out bool allowed);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetPrototype(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle prototype);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetPrototype(JavaScriptValueSafeHandle obj, out JavaScriptValueSafeHandle prototype);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsSetPrototype(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle prototype);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSetPrototype(JavaScriptValueSafeHandle obj, JavaScriptValueSafeHandle prototype);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetArrayBufferStorage(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, out System.IntPtr buffer, out uint len);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetArrayBufferStorage(JavaScriptValueSafeHandle obj, out IntPtr buffer, out uint len);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetTypedArrayStorage(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj, out System.IntPtr buf, out uint len, out Microsoft.Scripting.JavaScript.JavaScriptTypedArrayType type, out int elemSize);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetTypedArrayStorage(JavaScriptValueSafeHandle obj, out IntPtr buf, out uint len, out JavaScript.JavaScriptTypedArrayType type, out int elemSize);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetGlobalObject(out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle globalHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetGlobalObject(out JavaScriptValueSafeHandle globalHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetUndefinedValue(out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle globalHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetUndefinedValue(out JavaScriptValueSafeHandle globalHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetNullValue(out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle globalHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetNullValue(out JavaScriptValueSafeHandle globalHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetTrueValue(out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle globalHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetTrueValue(out JavaScriptValueSafeHandle globalHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsAddRef(System.IntPtr @ref, out uint count);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsAddRef(IntPtr @ref, out uint count);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsRelease(System.IntPtr @ref, out uint count);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsRelease(IntPtr @ref, out uint count);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsDisposeRuntime(System.IntPtr runtime);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsDisposeRuntime(IntPtr runtime);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateRuntime(Microsoft.Scripting.JsRuntimeAttributes attributes, System.IntPtr threadService, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptRuntimeSafeHandle runtime);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateRuntime(JsRuntimeAttributes attributes, IntPtr threadService, out JavaScriptRuntimeSafeHandle runtime);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsSetRuntimeMemoryAllocationCallback(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptRuntimeSafeHandle runtime, System.IntPtr extraInformation, System.IntPtr pfnCallback);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSetRuntimeMemoryAllocationCallback(JavaScriptRuntimeSafeHandle runtime, IntPtr extraInformation, IntPtr pfnCallback);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCollectGarbage(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptRuntimeSafeHandle runtime);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCollectGarbage(JavaScriptRuntimeSafeHandle runtime);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsDisableRuntimeExecution(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptRuntimeSafeHandle runtime);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsDisableRuntimeExecution(JavaScriptRuntimeSafeHandle runtime);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsEnableRuntimeExecution(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptRuntimeSafeHandle runtime);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsEnableRuntimeExecution(JavaScriptRuntimeSafeHandle runtime);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetRuntimeMemoryUsage(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptRuntimeSafeHandle runtime, out ulong usage);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetRuntimeMemoryUsage(JavaScriptRuntimeSafeHandle runtime, out ulong usage);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsIsRuntimeExecutionDisabled(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptRuntimeSafeHandle runtime, out bool isDisabled);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsIsRuntimeExecutionDisabled(JavaScriptRuntimeSafeHandle runtime, out bool isDisabled);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsCreateContext(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptRuntimeSafeHandle runtime, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptEngineSafeHandle engine);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsCreateContext(JavaScriptRuntimeSafeHandle runtime, out JavaScriptEngineSafeHandle engine);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsSetCurrentContext(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptEngineSafeHandle contextHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSetCurrentContext(JavaScriptEngineSafeHandle contextHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsBooleanToBool(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle valueRef, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] out bool result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsBooleanToBool(JavaScriptValueSafeHandle valueRef, [MarshalAsAttribute(UnmanagedType.U1)] out bool result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsConvertValueToBoolean(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle valueToConvert, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle resultHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsConvertValueToBoolean(JavaScriptValueSafeHandle valueToConvert, out JavaScriptValueSafeHandle resultHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsNumberToDouble(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle valueRef, out double result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsNumberToDouble(JavaScriptValueSafeHandle valueRef, out double result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsDoubleToNumber(double value, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsDoubleToNumber(double value, out JavaScriptValueSafeHandle result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsConvertValueToNumber(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle valueToConvert, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle resultHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsConvertValueToNumber(JavaScriptValueSafeHandle valueToConvert, out JavaScriptValueSafeHandle resultHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsGetValueType(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle value, out Microsoft.Scripting.JsValueType kind);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetValueType(JavaScriptValueSafeHandle value, out JsValueType kind);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsNumberToInt(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle valueRef, out int result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsNumberToInt(JavaScriptValueSafeHandle valueRef, out int result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsIntToNumber(int value, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsIntToNumber(int value, out JavaScriptValueSafeHandle result);
 
         // ***unsafe***
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public unsafe delegate Microsoft.Scripting.JsErrorCode FnJsPointerToString(void* psz, int length, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public unsafe delegate JsErrorCode FnJsPointerToString(void* psz, int length, out JavaScriptValueSafeHandle result);
 
         // ***unsafe***
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public unsafe delegate Microsoft.Scripting.JsErrorCode FnJsStringToPointer(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle str, out void* result, out uint strLen);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public unsafe delegate JsErrorCode FnJsStringToPointer(JavaScriptValueSafeHandle str, out void* result, out uint strLen);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsConvertValueToString(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle valueToConvert, out Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle resultHandle);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsConvertValueToString(JavaScriptValueSafeHandle valueToConvert, out JavaScriptValueSafeHandle resultHandle);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsEquals(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj1, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj2, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] out bool result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsEquals(JavaScriptValueSafeHandle obj1, JavaScriptValueSafeHandle obj2, [MarshalAsAttribute(UnmanagedType.U1)] out bool result);
 
-        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
-        public delegate Microsoft.Scripting.JsErrorCode FnJsStrictEquals(Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj1, Microsoft.Scripting.JavaScript.SafeHandles.JavaScriptValueSafeHandle obj2, [System.Runtime.InteropServices.MarshalAsAttribute(System.Runtime.InteropServices.UnmanagedType.U1)] out bool result);
+        [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsStrictEquals(JavaScriptValueSafeHandle obj1, JavaScriptValueSafeHandle obj2, [MarshalAsAttribute(UnmanagedType.U1)] out bool result);
         #endregion
 
         #region Field definitions
@@ -395,79 +396,79 @@
 
         internal ChakraApi(IntPtr hModule)
         {
-            SetFn(ref JsGetFalseValue, hModule, "JsGetFalseValue");
-            SetFn(ref JsHasException, hModule, "JsHasException");
-            SetFn(ref JsCreateObject, hModule, "JsCreateObject");
-            SetFn(ref JsCreateExternalObject, hModule, "JsCreateExternalObject");
-            SetFn(ref JsCreateSymbol, hModule, "JsCreateSymbol");
+            SetFn(ref JsAddRef, hModule, "JsAddRef");
+            SetFn(ref JsBooleanToBool, hModule, "JsBooleanToBool");
+            SetFn(ref JsCallFunction, hModule, "JsCallFunction");
+            SetFn(ref JsCollectGarbage, hModule, "JsCollectGarbage");
+            SetFn(ref JsConstructObject, hModule, "JsConstructObject");
+            SetFn(ref JsConvertValueToBoolean, hModule, "JsConvertValueToBoolean");
+            SetFn(ref JsConvertValueToNumber, hModule, "JsConvertValueToNumber");
+            SetFn(ref JsConvertValueToString, hModule, "JsConvertValueToString");
             SetFn(ref JsCreateArray, hModule, "JsCreateArray");
+            SetFn(ref JsCreateContext, hModule, "JsCreateContext");
+            SetFn(ref JsCreateError, hModule, "JsCreateError");
+            SetFn(ref JsCreateExternalObject, hModule, "JsCreateExternalObject");
             SetFn(ref JsCreateFunction, hModule, "JsCreateFunction");
             SetFn(ref JsCreateNamedFunction, hModule, "JsCreateNamedFunction");
-            SetFn(ref JsIdle, hModule, "JsIdle");
-            SetFn(ref JsGetAndClearException, hModule, "JsGetAndClearException");
-            SetFn(ref JsSetException, hModule, "JsSetException");
-            SetFn(ref JsCreateError, hModule, "JsCreateError");
+            SetFn(ref JsCreateObject, hModule, "JsCreateObject");
             SetFn(ref JsCreateRangeError, hModule, "JsCreateRangeError");
             SetFn(ref JsCreateReferenceError, hModule, "JsCreateReferenceError");
+            SetFn(ref JsCreateRuntime, hModule, "JsCreateRuntime");
+            SetFn(ref JsCreateSymbol, hModule, "JsCreateSymbol");
             SetFn(ref JsCreateSyntaxError, hModule, "JsCreateSyntaxError");
             SetFn(ref JsCreateTypeError, hModule, "JsCreateTypeError");
             SetFn(ref JsCreateURIError, hModule, "JsCreateURIError");
-            SetFn(ref JsStartDebugging, hModule, "JsStartDebugging");
-            SetFn(ref JsParseScript, hModule, "JsParseScript");
-            SetFn(ref JsParseSerializedScript, hModule, "JsParseSerializedScript");
-            SetFn(ref JsSerializeScript, hModule, "JsSerializeScript");
-            SetFn(ref JsRunScript, hModule, "JsRunScript");
-            SetFn(ref JsRunSerializedScript, hModule, "JsRunSerializedScript");
-            SetFn(ref JsCallFunction, hModule, "JsCallFunction");
-            SetFn(ref JsConstructObject, hModule, "JsConstructObject");
-            SetFn(ref JsGetPropertyIdFromName, hModule, "JsGetPropertyIdFromName");
-            SetFn(ref JsGetPropertyIdFromSymbol, hModule, "JsGetPropertyIdFromSymbol");
-            SetFn(ref JsGetProperty, hModule, "JsGetProperty");
-            SetFn(ref JsSetProperty, hModule, "JsSetProperty");
-            SetFn(ref JsDeleteProperty, hModule, "JsDeleteProperty");
-            SetFn(ref JsGetIndexedProperty, hModule, "JsGetIndexedProperty");
-            SetFn(ref JsSetIndexedProperty, hModule, "JsSetIndexedProperty");
-            SetFn(ref JsDeleteIndexedProperty, hModule, "JsDeleteIndexedProperty");
-            SetFn(ref JsHasProperty, hModule, "JsHasProperty");
-            SetFn(ref JsGetOwnPropertyDescriptor, hModule, "JsGetOwnPropertyDescriptor");
             SetFn(ref JsDefineProperty, hModule, "JsDefineProperty");
+            SetFn(ref JsDeleteIndexedProperty, hModule, "JsDeleteIndexedProperty");
+            SetFn(ref JsDeleteProperty, hModule, "JsDeleteProperty");
+            SetFn(ref JsDisableRuntimeExecution, hModule, "JsDisableRuntimeExecution");
+            SetFn(ref JsDisposeRuntime, hModule, "JsDisposeRuntime");
+            SetFn(ref JsDoubleToNumber, hModule, "JsDoubleToNumber");
+            SetFn(ref JsEnableRuntimeExecution, hModule, "JsEnableRuntimeExecution");
+            SetFn(ref JsEquals, hModule, "JsEquals");
+            SetFn(ref JsGetAndClearException, hModule, "JsGetAndClearException");
+            SetFn(ref JsGetArrayBufferStorage, hModule, "JsGetArrayBufferStorage");
+            SetFn(ref JsGetExtensionAllowed, hModule, "JsGetExtensionAllowed");
+            SetFn(ref JsGetFalseValue, hModule, "JsGetFalseValue");
+            SetFn(ref JsGetGlobalObject, hModule, "JsGetGlobalObject");
+            SetFn(ref JsGetIndexedProperty, hModule, "JsGetIndexedProperty");
+            SetFn(ref JsGetNullValue, hModule, "JsGetNullValue");
+            SetFn(ref JsGetOwnPropertyDescriptor, hModule, "JsGetOwnPropertyDescriptor");
             SetFn(ref JsGetOwnPropertyNames, hModule, "JsGetOwnPropertyNames");
             SetFn(ref JsGetOwnPropertySymbols, hModule, "JsGetOwnPropertySymbols");
-            SetFn(ref JsPreventExtension, hModule, "JsPreventExtension");
-            SetFn(ref JsGetExtensionAllowed, hModule, "JsGetExtensionAllowed");
+            SetFn(ref JsGetProperty, hModule, "JsGetProperty");
+            SetFn(ref JsGetPropertyIdFromName, hModule, "JsGetPropertyIdFromName");
+            SetFn(ref JsGetPropertyIdFromSymbol, hModule, "JsGetPropertyIdFromSymbol");
             SetFn(ref JsGetPrototype, hModule, "JsGetPrototype");
-            SetFn(ref JsSetPrototype, hModule, "JsSetPrototype");
-            SetFn(ref JsGetArrayBufferStorage, hModule, "JsGetArrayBufferStorage");
-            SetFn(ref JsGetTypedArrayStorage, hModule, "JsGetTypedArrayStorage");
-            SetFn(ref JsGetGlobalObject, hModule, "JsGetGlobalObject");
-            SetFn(ref JsGetUndefinedValue, hModule, "JsGetUndefinedValue");
-            SetFn(ref JsGetNullValue, hModule, "JsGetNullValue");
-            SetFn(ref JsGetTrueValue, hModule, "JsGetTrueValue");
-            SetFn(ref JsAddRef, hModule, "JsAddRef");
-            SetFn(ref JsRelease, hModule, "JsRelease");
-            SetFn(ref JsDisposeRuntime, hModule, "JsDisposeRuntime");
-            SetFn(ref JsCreateRuntime, hModule, "JsCreateRuntime");
-            SetFn(ref JsSetRuntimeMemoryAllocationCallback, hModule, "JsSetRuntimeMemoryAllocationCallback");
-            SetFn(ref JsCollectGarbage, hModule, "JsCollectGarbage");
-            SetFn(ref JsDisableRuntimeExecution, hModule, "JsDisableRuntimeExecution");
-            SetFn(ref JsEnableRuntimeExecution, hModule, "JsEnableRuntimeExecution");
             SetFn(ref JsGetRuntimeMemoryUsage, hModule, "JsGetRuntimeMemoryUsage");
-            SetFn(ref JsIsRuntimeExecutionDisabled, hModule, "JsIsRuntimeExecutionDisabled");
-            SetFn(ref JsCreateContext, hModule, "JsCreateContext");
-            SetFn(ref JsSetCurrentContext, hModule, "JsSetCurrentContext");
-            SetFn(ref JsBooleanToBool, hModule, "JsBooleanToBool");
-            SetFn(ref JsConvertValueToBoolean, hModule, "JsConvertValueToBoolean");
-            SetFn(ref JsNumberToDouble, hModule, "JsNumberToDouble");
-            SetFn(ref JsDoubleToNumber, hModule, "JsDoubleToNumber");
-            SetFn(ref JsConvertValueToNumber, hModule, "JsConvertValueToNumber");
+            SetFn(ref JsGetTrueValue, hModule, "JsGetTrueValue");
+            SetFn(ref JsGetTypedArrayStorage, hModule, "JsGetTypedArrayStorage");
+            SetFn(ref JsGetUndefinedValue, hModule, "JsGetUndefinedValue");
             SetFn(ref JsGetValueType, hModule, "JsGetValueType");
-            SetFn(ref JsNumberToInt, hModule, "JsNumberToInt");
+            SetFn(ref JsHasException, hModule, "JsHasException");
+            SetFn(ref JsHasProperty, hModule, "JsHasProperty");
+            SetFn(ref JsIdle, hModule, "JsIdle");
             SetFn(ref JsIntToNumber, hModule, "JsIntToNumber");
+            SetFn(ref JsIsRuntimeExecutionDisabled, hModule, "JsIsRuntimeExecutionDisabled");
+            SetFn(ref JsNumberToDouble, hModule, "JsNumberToDouble");
+            SetFn(ref JsNumberToInt, hModule, "JsNumberToInt");
+            SetFn(ref JsParseScript, hModule, "JsParseScript");
+            SetFn(ref JsParseSerializedScript, hModule, "JsParseSerializedScript");
             SetFn(ref JsPointerToString, hModule, "JsPointerToString");
-            SetFn(ref JsStringToPointer, hModule, "JsStringToPointer");
-            SetFn(ref JsConvertValueToString, hModule, "JsConvertValueToString");
-            SetFn(ref JsEquals, hModule, "JsEquals");
+            SetFn(ref JsPreventExtension, hModule, "JsPreventExtension");
+            SetFn(ref JsRelease, hModule, "JsRelease");
+            SetFn(ref JsRunScript, hModule, "JsRunScript");
+            SetFn(ref JsRunSerializedScript, hModule, "JsRunSerializedScript");
+            SetFn(ref JsSerializeScript, hModule, "JsSerializeScript");
+            SetFn(ref JsSetCurrentContext, hModule, "JsSetCurrentContext");
+            SetFn(ref JsSetException, hModule, "JsSetException");
+            SetFn(ref JsSetIndexedProperty, hModule, "JsSetIndexedProperty");
+            SetFn(ref JsSetProperty, hModule, "JsSetProperty");
+            SetFn(ref JsSetPrototype, hModule, "JsSetPrototype");
+            SetFn(ref JsSetRuntimeMemoryAllocationCallback, hModule, "JsSetRuntimeMemoryAllocationCallback");
+            SetFn(ref JsStartDebugging, hModule, "JsStartDebugging", optional: true);
             SetFn(ref JsStrictEquals, hModule, "JsStrictEquals");
+            SetFn(ref JsStringToPointer, hModule, "JsStringToPointer");
         }
 
         public static ChakraApi Instance
@@ -480,26 +481,30 @@
 
         private static void ThrowForNative()
         {
-            throw new Exception(string.Format("Win32 error received for LoadLibrary or GetProcAddress: 0x{0:x8}", Marshal.GetLastWin32Error()));
+            int hr = Marshal.GetHRForLastWin32Error();
+            throw Marshal.GetExceptionForHR(hr);
         }
 
-        private static void SetFn<TDelegate>(ref TDelegate target, System.IntPtr hModule, string procName)
+        private static void SetFn<TDelegate>(ref TDelegate target, IntPtr hModule, string procName, bool optional = false)
             where TDelegate : class
         {
-            System.IntPtr procAddr = NativeMethods.GetProcAddress(hModule, procName);
-            if ((hModule == System.IntPtr.Zero))
+            IntPtr procAddr = NativeMethods.GetProcAddress(hModule, procName);
+            if (IntPtr.Zero != procAddr)
+            {
+                target = Marshal.GetDelegateForFunctionPointer<TDelegate>(procAddr);
+            }
+            else if (!optional)
             {
                 ThrowForNative();
-            }
-            target = System.Runtime.InteropServices.Marshal.GetDelegateForFunctionPointer<TDelegate>(procAddr);
+            }            
         }
 
         private static ChakraApi Load()
         {
             string myPath = ".";
-            string directory = System.IO.Path.GetDirectoryName(myPath);
+            string directory = Path.GetDirectoryName(myPath);
             string arch = "x86";
-            if ((System.IntPtr.Size == 8))
+            if (IntPtr.Size == 8)
             {
                 arch = "x64";
             }
@@ -510,7 +515,7 @@
             string build = "fre";
 #endif
 
-            string mainPath = System.IO.Path.Combine(directory, "ChakraCore", build, arch, "ChakraCore.dll");
+            string mainPath = Path.Combine(directory, "ChakraCore", build, arch, "ChakraCore.dll");
             if (File.Exists(mainPath))
             {
                 return FromFile(mainPath);
@@ -532,19 +537,19 @@
                 return new ChakraApi(hMod);
             }
 
-            throw new System.IO.FileNotFoundException(string.Format("Could not locate a copy of ChakraCore.dll to load.  The following paths were trie" +
+            throw new FileNotFoundException(string.Format("Could not locate a copy of ChakraCore.dll to load.  The following paths were trie" +
                         "d:\n\t{0}\n\t{1}\n\t{2}\n\nEnsure that an architecture-appropriate copy of ChakraCore.dl" +
                         "l is included in your project.  Also tried to load the system-provided Chakra.dll.", mainPath, alternatePath, localPath));
         }
 
         public static ChakraApi FromFile(string filePath)
         {
-            if ((false == System.IO.File.Exists(filePath)))
+            if ((false == File.Exists(filePath)))
             {
-                throw new System.IO.FileNotFoundException("The library could not be located at the specified path.", filePath);
+                throw new FileNotFoundException("The library could not be located at the specified path.", filePath);
             }
-            System.IntPtr hMod = NativeMethods.LoadLibraryEx(filePath, System.IntPtr.Zero, 0);
-            if ((hMod == System.IntPtr.Zero))
+            IntPtr hMod = NativeMethods.LoadLibraryEx(filePath, IntPtr.Zero, 0);
+            if ((hMod == IntPtr.Zero))
             {
                 ThrowForNative();
             }
