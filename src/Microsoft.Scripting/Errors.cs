@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Scripting.JavaScript;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -75,6 +76,7 @@ namespace Microsoft.Scripting
             { JsErrorCode.JsErrorWrongThread, () => { throw new InvalidOperationException(ERROR_WRONG_THREAD); } },
         };
 
+        [DebuggerStepThrough]
         public static void ThrowFor(JsErrorCode errorCode)
         {
             Debug.Assert(errorCode != JsErrorCode.JsNoError);
@@ -88,12 +90,29 @@ namespace Microsoft.Scripting
             throwAction();
         }
 
+        [DebuggerStepThrough]
         public static void ThrowIfIs(JsErrorCode errorCode)
         {
+            Debug.Assert(errorCode != JsErrorCode.JsErrorScriptException);
+
+            if (errorCode != JsErrorCode.JsNoError)
+                throw new Exception(errorCode.ToString());
+        }
+
+        [DebuggerStepThrough]
+        public static void CheckForScriptExceptionOrThrow(JsErrorCode errorCode, JavaScriptEngine engine)
+        {
+            if (errorCode == JsErrorCode.JsErrorScriptException)
+            {
+                engine.OnRuntimeExceptionRaised();
+                return;
+            }
+
             if (errorCode != JsErrorCode.JsNoError)
                 ThrowFor(errorCode);
         }
 
+        [DebuggerStepThrough]
         public static void ThrowIOEFmt(string formatStr, string param)
         {
             string result = string.Format(formatStr, param);

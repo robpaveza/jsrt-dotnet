@@ -38,6 +38,7 @@
   <ItemGroup>
     <Compile Include="Errors.cs" />
     <Compile Include="InternalExtensions.cs" />
+    <Compile Include="JavaScript\JavaScriptExecutionContext.cs" />
     <Compile Include="JavaScript\ChakraApi.cs" />
     <Compile Include="JavaScript\JavaScriptArray.cs" />
     <Compile Include="JavaScript\JavaScriptArrayBuffer.cs" />

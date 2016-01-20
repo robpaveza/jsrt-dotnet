@@ -1,11 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Runtime.InteropServices;
-
 using Microsoft.Scripting.JavaScript.SafeHandles;
 
 namespace Microsoft.Scripting
-{    
+{
     internal sealed class ChakraApi
     {
         #region API method type definitions
@@ -167,6 +166,8 @@ namespace Microsoft.Scripting
 
         [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
         public delegate JsErrorCode FnJsSetRuntimeMemoryAllocationCallback(JavaScriptRuntimeSafeHandle runtime, IntPtr extraInformation, IntPtr pfnCallback);
+        [System.Runtime.InteropServices.UnmanagedFunctionPointerAttribute(System.Runtime.InteropServices.CallingConvention.Winapi)]
+        public delegate Microsoft.Scripting.JsErrorCode FnJsSetRuntimeMemoryAllocationCallbackWithIntPtr(IntPtr runtime, System.IntPtr extraInformation, System.IntPtr pfnCallback);
 
         [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
         public delegate JsErrorCode FnJsCollectGarbage(JavaScriptRuntimeSafeHandle runtime);
@@ -229,6 +230,12 @@ namespace Microsoft.Scripting
 
         [UnmanagedFunctionPointerAttribute(CallingConvention.Winapi)]
         public delegate JsErrorCode FnJsStrictEquals(JavaScriptValueSafeHandle obj1, JavaScriptValueSafeHandle obj2, [MarshalAsAttribute(UnmanagedType.U1)] out bool result);
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsGetExternalData(JavaScriptValueSafeHandle @ref, out IntPtr externalData);
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSetExternalData(JavaScriptValueSafeHandle @ref, IntPtr externalData);
         #endregion
 
         #region Field definitions
@@ -337,6 +344,7 @@ namespace Microsoft.Scripting
         public readonly FnJsCreateRuntime JsCreateRuntime;
 
         public readonly FnJsSetRuntimeMemoryAllocationCallback JsSetRuntimeMemoryAllocationCallback;
+        public readonly FnJsSetRuntimeMemoryAllocationCallbackWithIntPtr JsSetRuntimeMemoryAllocationCallbackWithIntPtr;
 
         public readonly FnJsCollectGarbage JsCollectGarbage;
 
@@ -351,6 +359,11 @@ namespace Microsoft.Scripting
         public readonly FnJsCreateContext JsCreateContext;
 
         public readonly FnJsSetCurrentContext JsSetCurrentContext;
+
+        public JsErrorCode JsReleaseCurrentContext()
+        {
+            return JsSetCurrentContext(new JavaScriptEngineSafeHandle(IntPtr.Zero));
+        }
 
         public readonly FnJsBooleanToBool JsBooleanToBool;
 
@@ -377,6 +390,10 @@ namespace Microsoft.Scripting
         public readonly FnJsEquals JsEquals;
 
         public readonly FnJsStrictEquals JsStrictEquals;
+
+        public readonly FnJsGetExternalData JsGetExternalData;
+
+        public readonly FnJsSetExternalData JsSetExternalData;
         #endregion
 
         private static System.Lazy<ChakraApi> sharedInstance_ = new System.Lazy<ChakraApi>(Load);
@@ -469,6 +486,8 @@ namespace Microsoft.Scripting
             SetFn(ref JsStartDebugging, hModule, "JsStartDebugging", optional: true);
             SetFn(ref JsStrictEquals, hModule, "JsStrictEquals");
             SetFn(ref JsStringToPointer, hModule, "JsStringToPointer");
+            SetFn(ref JsGetExternalData, hModule, "JsGetExternalData");
+            SetFn(ref JsSetExternalData, hModule, "JsSetExternalData");
         }
 
         public static ChakraApi Instance

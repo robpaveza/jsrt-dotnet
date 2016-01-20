@@ -14,12 +14,14 @@ namespace Microsoft.Scripting.JavaScript
         private JavaScriptRuntimeSettings settings_;
         private JavaScriptRuntimeSafeHandle handle_;
         private ChakraApi api_ = ChakraApi.Instance;
-        
+        private List<WeakReference<JavaScriptEngine>> childEngines_;
+
         public JavaScriptRuntime(JavaScriptRuntimeSettings settings = null)
         {
             if (settings == null)
                 settings = new JavaScriptRuntimeSettings();
 
+            childEngines_ = new List<WeakReference<JavaScriptEngine>>();
             settings_ = settings;
             var attrs = settings.GetRuntimeAttributes();
 
@@ -130,7 +132,22 @@ namespace Microsoft.Scripting.JavaScript
         {
             if (disposing)
             {
-                if (handle_ != null)
+                api_.JsSetCurrentContext(JavaScriptEngineSafeHandle.Invalid);
+                api_.JsSetRuntimeMemoryAllocationCallback(this.handle_, IntPtr.Zero, IntPtr.Zero);
+                if (childEngines_ != null)
+                {
+                    foreach (var engineRef in childEngines_)
+                    {
+                        JavaScriptEngine engine;
+                        if (engineRef.TryGetTarget(out engine))
+                        {
+                            engine.Dispose();
+                        }
+                    }
+                    childEngines_ = null;
+                }
+
+                if (handle_ != null && !handle_.IsClosed)
                 {
                     handle_.Dispose();
                     handle_ = null;

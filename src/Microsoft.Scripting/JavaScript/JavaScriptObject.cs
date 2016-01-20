@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Dynamic;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 namespace Microsoft.Scripting.JavaScript
 {
@@ -16,21 +18,23 @@ namespace Microsoft.Scripting.JavaScript
 
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public JavaScriptArray Keys
         {
             get
             {
-                var eng = GetEngineAndClaimContext();
+                var eng = GetEngine();
                 var fn = GetObjectBuiltinFunction("keys", "Object.keys");
                 return fn.Invoke(new JavaScriptValue[] { eng.UndefinedValue, this }) as JavaScriptArray;
             }
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public bool IsExtensible
         {
             get
             {
-                var eng = GetEngineAndClaimContext();
+                var eng = GetEngine();
 
                 bool result;
                 Errors.ThrowIfIs(api_.JsGetExtensionAllowed(handle_, out result));
@@ -39,11 +43,12 @@ namespace Microsoft.Scripting.JavaScript
             }
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public JavaScriptObject Prototype
         {
             get
             {
-                var eng = GetEngineAndClaimContext();
+                var eng = GetEngine();
 
                 JavaScriptValueSafeHandle handle;
                 Errors.ThrowIfIs(api_.JsGetPrototype(handle_, out handle));
@@ -52,7 +57,7 @@ namespace Microsoft.Scripting.JavaScript
             }
             set
             {
-                var eng = GetEngineAndClaimContext();
+                var eng = GetEngine();
                 if (value == null)
                     value = eng.NullValue;
 
@@ -60,22 +65,34 @@ namespace Microsoft.Scripting.JavaScript
             }
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        public object ExternalObject
+        {
+            get
+            {
+                var eng = GetEngine();
+                return eng.GetExternalObjectFrom(this);
+            }
+        }
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public bool IsSealed
         {
             get
             {
-                var eng = GetEngineAndClaimContext();
+                var eng = GetEngine();
                 var fn = GetObjectBuiltinFunction("isSealed", "Object.isSealed");
 
                 return eng.Converter.ToBoolean(fn.Invoke(new JavaScriptValue[] { eng.UndefinedValue, this }));
             }
         }
 
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public bool IsFrozen
         {
             get
             {
-                var eng = GetEngineAndClaimContext();
+                var eng = GetEngine();
                 var fn = GetObjectBuiltinFunction("isFrozen", "Object.isFrozen");
 
                 return eng.Converter.ToBoolean(fn.Invoke(new JavaScriptValue[] { eng.UndefinedValue, this }));
@@ -93,7 +110,7 @@ namespace Microsoft.Scripting.JavaScript
 
         internal JavaScriptFunction GetObjectBuiltinFunction(string functionName, string nameIfNotFound)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             var obj = eng.GlobalObject.GetPropertyByName("Object") as JavaScriptFunction;
             if (obj == null)
                 Errors.ThrowIOEFmt(Errors.DefaultFnOverwritten, "Object");
@@ -109,7 +126,7 @@ namespace Microsoft.Scripting.JavaScript
             if (other == null)
                 throw new ArgumentNullException(nameof(other));
 
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             var fn = GetBuiltinFunctionProperty("isPrototypeOf", "Object.prototype.isPrototypeOf");
 
             var args = new List<JavaScriptValue>() { this, other };
@@ -119,7 +136,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public bool PropertyIsEnumerable(string propertyName)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             var fn = GetBuiltinFunctionProperty("propertyIsEnumerable", "Object.prototype.propertyIsEnumerable");
             using (var jsPropName = eng.Converter.FromString(propertyName))
             {
@@ -130,7 +147,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptValue GetPropertyByName(string propertyName)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
@@ -143,7 +160,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public void SetPropertyByName(string propertyName, JavaScriptValue value)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
@@ -152,7 +169,7 @@ namespace Microsoft.Scripting.JavaScript
         
         public void DeletePropertyByName(string propertyName)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
@@ -176,7 +193,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptValue GetPropertyBySymbol(JavaScriptSymbol symbol)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
@@ -189,7 +206,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public void SetPropertyBySymbol(JavaScriptSymbol symbol, JavaScriptValue value)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
@@ -198,7 +215,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public void DeletePropertyBySymbol(JavaScriptSymbol symbol)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromSymbol(symbol.handle_, out propId));
@@ -225,7 +242,7 @@ namespace Microsoft.Scripting.JavaScript
             if (index == null)
                 throw new ArgumentNullException(nameof(index));
 
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             JavaScriptValueSafeHandle result;
             Errors.ThrowIfIs(api_.JsGetIndexedProperty(handle_, index.handle_, out result));
 
@@ -237,7 +254,7 @@ namespace Microsoft.Scripting.JavaScript
             if (index == null)
                 throw new ArgumentNullException(nameof(index));
 
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             if (value == null)
                 value = eng.NullValue;
 
@@ -249,7 +266,6 @@ namespace Microsoft.Scripting.JavaScript
             if (index == null)
                 throw new ArgumentNullException(nameof(index));
 
-            GetEngineAndClaimContext(); // unused but the call is needed to claim the context
             Errors.ThrowIfIs(api_.JsDeleteIndexedProperty(handle_, index.handle_));
         }
 
@@ -267,7 +283,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public bool HasOwnProperty(string propertyName)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             var fn = GetBuiltinFunctionProperty("hasOwnProperty", "Object.prototype.hasOwnProperty");
 
             return eng.Converter.ToBoolean(fn.Invoke(new JavaScriptValue[] { this, eng.Converter.FromString(propertyName) }));
@@ -275,7 +291,6 @@ namespace Microsoft.Scripting.JavaScript
 
         public bool HasProperty(string propertyName)
         {
-            GetEngineAndClaimContext();
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
             bool has;
@@ -286,7 +301,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptObject GetOwnPropertyDescriptor(string propertyName)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
             JavaScriptValueSafeHandle resultHandle;
@@ -300,18 +315,18 @@ namespace Microsoft.Scripting.JavaScript
             if (descriptor == null)
                 throw new ArgumentNullException(nameof(descriptor));
 
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             IntPtr propId;
             Errors.ThrowIfIs(api_.JsGetPropertyIdFromName(propertyName, out propId));
 
             bool wasSet;
-            Errors.ThrowIfIs(api_.JsDefineProperty(handle_, propId, descriptor.handle_, out wasSet));
+            Errors.CheckForScriptExceptionOrThrow(api_.JsDefineProperty(handle_, propId, descriptor.handle_, out wasSet), eng);
         }
 
         public void DefineProperties(JavaScriptObject propertiesContainer)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             var fnDP = GetObjectBuiltinFunction("defineProperties", "Object.defineProperties");
 
             fnDP.Invoke(new JavaScriptValue[] { eng.UndefinedValue, this, propertiesContainer });
@@ -319,7 +334,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptArray GetOwnPropertyNames()
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             JavaScriptValueSafeHandle resultHandle;
             Errors.ThrowIfIs(api_.JsGetOwnPropertyNames(handle_, out resultHandle));
@@ -329,7 +344,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptArray GetOwnPropertySymbols()
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             JavaScriptValueSafeHandle resultHandle;
             Errors.ThrowIfIs(api_.JsGetOwnPropertySymbols(handle_, out resultHandle));
@@ -339,14 +354,12 @@ namespace Microsoft.Scripting.JavaScript
 
         public void PreventExtensions()
         {
-            GetEngineAndClaimContext();
-
             Errors.ThrowIfIs(api_.JsPreventExtension(handle_));
         }
 
         public void Seal()
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             var fn = GetObjectBuiltinFunction("seal", "Object.seal");
 
             fn.Invoke(new JavaScriptValue[] { eng.UndefinedValue, this });
@@ -354,7 +367,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public void Freeze()
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             var fn = GetObjectBuiltinFunction("freeze", "Object.freeze");
 
             fn.Invoke(new JavaScriptValue[] { eng.UndefinedValue, this });

@@ -41,5 +41,7 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
             Debug.Assert(error == JsErrorCode.JsNoError);
             return true;
         }
+
+        public static readonly JavaScriptEngineSafeHandle Invalid = new JavaScriptEngineSafeHandle();
     }
 }

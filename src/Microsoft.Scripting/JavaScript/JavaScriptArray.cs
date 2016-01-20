@@ -33,7 +33,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptValue GetAt(int index)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             JavaScriptValueSafeHandle resultHandle;
             using (var temp = eng.Converter.FromInt32(index))
@@ -45,7 +45,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public void SetAt(int index, JavaScriptValue value)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             using (var temp = eng.Converter.FromInt32(index))
             {
@@ -55,7 +55,7 @@ namespace Microsoft.Scripting.JavaScript
 
         private JavaScriptFunction GetArrayBuiltin(string name)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             var arrayCtor = eng.GlobalObject.GetPropertyByName("Array") as JavaScriptFunction;
             if (arrayCtor == null)
                 Errors.ThrowIOEFmt(Errors.DefaultFnOverwritten, "Array");
@@ -137,7 +137,7 @@ namespace Microsoft.Scripting.JavaScript
         }
         public string Join(string separator = "")
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             List<JavaScriptValue> args = new List<JavaScriptValue>();
             args.Add(this);
             if (!string.IsNullOrEmpty(separator))

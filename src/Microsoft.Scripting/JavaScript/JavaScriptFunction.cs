@@ -22,9 +22,11 @@ namespace Microsoft.Scripting.JavaScript
             if (argsArray.Length > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(args));
 
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(api_.JsCallFunction(handle_, argsArray, (ushort)argsArray.Length, out resultHandle));
+            Errors.CheckForScriptExceptionOrThrow(api_.JsCallFunction(handle_, argsArray, (ushort)argsArray.Length, out resultHandle), eng);
+            if (resultHandle.IsInvalid)
+                return eng.UndefinedValue;
 
             return eng.CreateValueFromHandle(resultHandle);
         }
@@ -35,16 +37,18 @@ namespace Microsoft.Scripting.JavaScript
             if (argsArray.Length > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(args));
 
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             JavaScriptValueSafeHandle resultHandle;
-            Errors.ThrowIfIs(api_.JsConstructObject(handle_, argsArray, (ushort)argsArray.Length, out resultHandle));
+            Errors.CheckForScriptExceptionOrThrow(api_.JsConstructObject(handle_, argsArray, (ushort)argsArray.Length, out resultHandle), eng);
+            if (resultHandle.IsInvalid)
+                return eng.NullValue;
 
             return eng.CreateObjectFromHandle(resultHandle);
         }
 
         public JavaScriptFunction Bind(JavaScriptObject thisObject, IEnumerable<JavaScriptValue> args)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
 
             if (thisObject == null)
                 thisObject = eng.NullValue;
@@ -57,7 +61,7 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptValue Apply(JavaScriptObject thisObject, JavaScriptArray args = null)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             if (thisObject == null)
                 thisObject = eng.NullValue;
 
@@ -73,14 +77,17 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptValue Call(JavaScriptObject thisObject, IEnumerable<JavaScriptValue> args)
         {
-            var eng = GetEngineAndClaimContext();
+            var eng = GetEngine();
             if (thisObject == null)
                 thisObject = eng.NullValue;
+
             if (args == null)
                 args = Enumerable.Empty<JavaScriptValue>();
 
-            var applyFn = GetBuiltinFunctionProperty("call", "Function.prototype.call");
-            return applyFn.Invoke(args.PrependWith(thisObject));
+            var argsArray = args.PrependWith(thisObject).Select(v => v.handle_.DangerousGetHandle()).ToArray();
+            JavaScriptValueSafeHandle result;
+            Errors.CheckForScriptExceptionOrThrow(api_.JsCallFunction(handle_, argsArray, unchecked((ushort)argsArray.Length), out result), eng);
+            return eng.CreateValueFromHandle(result);
         }
 
         #region DynamicObject overrides
