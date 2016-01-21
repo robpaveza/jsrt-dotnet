@@ -6,12 +6,14 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Microsoft.Scripting.JavaScript
 {
     public delegate void JavaScriptExternalObjectFinalizeCallback(object additionalData);
     public delegate JavaScriptValue JavaScriptCallableFunction(JavaScriptEngine callingEngine, bool asConstructor, JavaScriptValue thisValue, IEnumerable<JavaScriptValue> arguments);
+    public delegate Task<JavaScriptValue> JavaScriptCallableAsyncFunction(JavaScriptEngine callingEngine, JavaScriptValue thisValue, IEnumerable<JavaScriptValue> arguments);
 
     public sealed class JavaScriptEngine : IDisposable
     {
@@ -36,6 +38,8 @@ namespace Microsoft.Scripting.JavaScript
         private static IntPtr NativeCallbackPtr;
         private static JsFinalizeCallback FinalizerCallback;
         private static IntPtr FinalizerCallbackPtr;
+        private static PromiseContinuationCallback PromiseContinuationCallback;
+        private static IntPtr PromiseContinuationCallbackPtr;
         private HashSet<ExternalObjectThunkData> externalObjects_;
         private ChakraApi api_;
 
@@ -44,6 +48,8 @@ namespace Microsoft.Scripting.JavaScript
 
         private JavaScriptValue undefined_, true_, false_;
         private JavaScriptObject global_, null_;
+        private JavaScriptFunction Promise_;
+        private Queue<JavaScriptFunction> pendingTasks_;
         
         static JavaScriptEngine()
         {
@@ -52,6 +58,9 @@ namespace Microsoft.Scripting.JavaScript
 
             FinalizerCallback = FinalizerCallbackThunk;
             FinalizerCallbackPtr = Marshal.GetFunctionPointerForDelegate(FinalizerCallback);
+
+            PromiseContinuationCallback = PromiseContinuationCallbackThunk;
+            PromiseContinuationCallbackPtr = Marshal.GetFunctionPointerForDelegate(PromiseContinuationCallback);
         }
 
         internal JavaScriptEngine(JavaScriptEngineSafeHandle handle, JavaScriptRuntime runtime, ChakraApi api)
@@ -69,24 +78,38 @@ namespace Microsoft.Scripting.JavaScript
 
             handlesToRelease_ = new List<IntPtr>();
             handleReleaseLock_ = new object();
+            pendingTasks_ = new Queue<JavaScriptFunction>();
 
-            ClaimContextPrivate();
-            JavaScriptValueSafeHandle global;
-            Errors.ThrowIfIs(api_.JsGetGlobalObject(out global));
-            global_ = CreateObjectFromHandle(global);
-            JavaScriptValueSafeHandle undef;
-            Errors.ThrowIfIs(api_.JsGetUndefinedValue(out undef));
-            undefined_ = CreateValueFromHandle(undef);
-            JavaScriptValueSafeHandle @null;
-            Errors.ThrowIfIs(api_.JsGetNullValue(out @null));
-            null_ = CreateObjectFromHandle(@null);
-            JavaScriptValueSafeHandle @true;
-            Errors.ThrowIfIs(api_.JsGetTrueValue(out @true));
-            true_ = CreateValueFromHandle(@true);
-            JavaScriptValueSafeHandle @false;
-            Errors.ThrowIfIs(api_.JsGetFalseValue(out @false));
-            false_ = CreateValueFromHandle(@false);
-            ReleaseContextPrivate();
+            try
+            {
+                ClaimContextPrivate();
+
+                GCHandle engineHandle = GCHandle.Alloc(this, GCHandleType.Weak);
+                Errors.ThrowIfIs(api_.JsSetPromiseContinuationCallback(PromiseContinuationCallbackPtr, GCHandle.ToIntPtr(engineHandle)));
+
+                JavaScriptValueSafeHandle global;
+                Errors.ThrowIfIs(api_.JsGetGlobalObject(out global));
+                global_ = CreateObjectFromHandle(global);
+                JavaScriptValueSafeHandle undef;
+                Errors.ThrowIfIs(api_.JsGetUndefinedValue(out undef));
+                undefined_ = CreateValueFromHandle(undef);
+                JavaScriptValueSafeHandle @null;
+                Errors.ThrowIfIs(api_.JsGetNullValue(out @null));
+                null_ = CreateObjectFromHandle(@null);
+                JavaScriptValueSafeHandle @true;
+                Errors.ThrowIfIs(api_.JsGetTrueValue(out @true));
+                true_ = CreateValueFromHandle(@true);
+                JavaScriptValueSafeHandle @false;
+                Errors.ThrowIfIs(api_.JsGetFalseValue(out @false));
+                false_ = CreateValueFromHandle(@false);
+                Promise_ = global_.GetPropertyByName("Promise") as JavaScriptFunction;
+                if (Promise_ == null)
+                    throw new Exception("Unexpected: Promise constructor could not be resolved at runtime initialization.");
+            }
+            finally
+            {
+                ReleaseContextPrivate();
+            }
         }
 
         public JavaScriptRuntime Runtime
@@ -157,6 +180,12 @@ namespace Microsoft.Scripting.JavaScript
 
         private void ReleaseContextPrivate()
         {
+            while (pendingTasks_.Count > 0)
+            {
+                var fn = pendingTasks_.Dequeue();
+                fn.Invoke(Enumerable.Empty<JavaScriptValue>());
+            }
+
             Errors.ThrowIfIs(api_.JsReleaseCurrentContext());
         }
 
@@ -450,6 +479,25 @@ namespace Microsoft.Scripting.JavaScript
             }
         }
 
+        private static void PromiseContinuationCallbackThunk(IntPtr task, IntPtr callbackState)
+        {
+            if (callbackState == IntPtr.Zero)
+                return;
+
+            GCHandle handle = GCHandle.FromIntPtr(callbackState);
+            JavaScriptEngine engine = handle.Target as JavaScriptEngine;
+            if (engine == null) // GC'd
+                return;
+
+            var taskHandle = new JavaScriptValueSafeHandle(task);
+            var fn = engine.CreateObjectFromHandle(taskHandle) as JavaScriptFunction;
+            Debug.Assert(fn != null);
+            if (fn == null)
+                return;
+
+            engine.pendingTasks_.Enqueue(fn);
+        }
+
         public JavaScriptObject CreateExternalObject(object externalData, JavaScriptExternalObjectFinalizeCallback finalizeCallback)
         {
             ExternalObjectThunkData thunk = new ExternalObjectThunkData() { callback = finalizeCallback, engine = new WeakReference<JavaScriptEngine>(this), userData = new WeakReference<object>(externalData), };
@@ -624,6 +672,107 @@ namespace Microsoft.Scripting.JavaScript
             return CreateObjectFromHandle(resultHandle) as JavaScriptFunction;
         }
 
+        public JavaScriptFunction CreateFunction(JavaScriptCallableAsyncFunction hostFunction, AsyncHostFunctionKind functionMarshalingKind = AsyncHostFunctionKind.Promise)
+        {
+            if (hostFunction == null)
+                throw new ArgumentNullException(nameof(hostFunction));
+            if (functionMarshalingKind == AsyncHostFunctionKind.Callback)
+                throw new NotSupportedException("Callback-type async functions are not yet supported.");
+            if (!Enum.IsDefined(typeof(AsyncHostFunctionKind), functionMarshalingKind))
+                throw new ArgumentException(nameof(functionMarshalingKind));
+
+            SynchronizationContext syncContext = SynchronizationContext.Current;
+
+            NativeFunctionThunkData td = new NativeFunctionThunkData() {
+                engine = new WeakReference<JavaScriptEngine>(this),
+                callback = (eng, ctor, thisObj, args) =>
+                {
+                    /*
+var p = new Promise(function(resolve, reject) {
+    // ...
+    resolve(result);
+});
+return p;
+*/
+                    JavaScriptFunction resolve = null, reject = null;
+                    var promiseInit = CreateFunction((engine, construct, @this, arguments) =>
+                    {
+                        var argumentsArray = arguments.ToArray();
+                        Debug.Assert(argumentsArray.Length >= 2);
+                        resolve = argumentsArray[0] as JavaScriptFunction;
+                        reject = argumentsArray[1] as JavaScriptFunction;
+                        Debug.Assert(resolve != null && reject != null);
+
+                        return engine.UndefinedValue;
+                    }, "PromiseInitializer");
+
+                    var promise = Promise_.Construct(new[] { promiseInit });
+
+                    Task.Run(async () =>
+                    {
+                        JavaScriptValue resultValue = null;
+                        bool succeeded = false;
+                        Exception callbackError = null;
+                        try
+                        {
+                            resultValue = await hostFunction(eng, thisObj, args);
+                            succeeded = true;
+                        }
+                        catch (Exception ex)
+                        {
+                            callbackError = ex;
+                        }
+
+                        if (syncContext != null)
+                        {
+                            syncContext.Post((s) =>
+                            {
+                                using (var context = eng.AcquireContext())
+                                {
+                                    if (succeeded)
+                                    {
+                                        resolve.Invoke(new[] { resultValue });
+                                    }
+                                    else
+                                    {
+                                        reject.Invoke(new[] { eng.Converter.FromObject(callbackError) });
+                                    }
+                                }
+                            }, null);
+                        }
+                        else
+                        {
+                            using (var context = eng.AcquireContext())
+                            {
+                                if (succeeded)
+                                {
+                                    resolve.Invoke(new[] { resultValue });
+                                }
+                                else
+                                {
+                                    reject.Invoke(new[] { eng.Converter.FromObject(callbackError) });
+                                }
+                            }
+                        }
+                    });
+
+                    return promise;
+                }
+            };
+            GCHandle handle = GCHandle.Alloc(td, GCHandleType.Weak);
+            nativeFunctionThunks_.Add(td);
+
+            JavaScriptValueSafeHandle resultHandle;
+            Errors.ThrowIfIs(api_.JsCreateFunction(NativeCallbackPtr, GCHandle.ToIntPtr(handle), out resultHandle));
+
+            return CreateObjectFromHandle(resultHandle) as JavaScriptFunction;
+        }
+
+        public JavaScriptFunction CreateFunction(JavaScriptCallableAsyncFunction hostFunction, string name, AsyncHostFunctionKind functionMarshalingKind = AsyncHostFunctionKind.Promise)
+        {
+            return null;
+        }
+
         public JavaScriptValue GetAndClearException()
         {
             JavaScriptValueSafeHandle handle;
@@ -749,5 +898,22 @@ namespace Microsoft.Scripting.JavaScript
             Dispose(false);
         }
         #endregion
+    }
+
+    /// <summary>
+    /// Represents the mechanism that the host uses to notify JavaScript when an asynchronous 
+    /// host function is completed.
+    /// </summary>
+    public enum AsyncHostFunctionKind
+    {
+        /// <summary>
+        /// Indicates that the function will return a Promise, which will either be rejected 
+        /// or resolved once the host asynchronous task is completed.
+        /// </summary>
+        Promise,
+        /// <summary>
+        /// Not currently supported.
+        /// </summary>
+        Callback,
     }
 }

@@ -225,6 +225,9 @@ namespace Microsoft.Scripting
         [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 3)] IntPtr[] args, 
         ushort argCount, 
         IntPtr data);
+    
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+    internal delegate void PromiseContinuationCallback(IntPtr task, IntPtr callbackState);
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     internal delegate void JsFinalizeCallback(IntPtr data);

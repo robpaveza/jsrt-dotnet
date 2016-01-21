@@ -37,6 +37,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Errors.cs" />
+    <Compile Include="HostBridge\ClassBridge.cs" />
+    <Compile Include="HostBridge\ConstructorBridge.cs" />
+    <Compile Include="HostBridge\EventBridge.cs" />
+    <Compile Include="HostBridge\MethodBridge.cs" />
+    <Compile Include="HostBridge\ObjectBridge.cs" />
+    <Compile Include="HostBridge\PropertyBridge.cs" />
     <Compile Include="InternalExtensions.cs" />
     <Compile Include="JavaScript\JavaScriptExecutionContext.cs" />
     <Compile Include="JavaScript\ChakraApi.cs" />

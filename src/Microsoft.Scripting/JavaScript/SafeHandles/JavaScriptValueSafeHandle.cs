@@ -19,9 +19,9 @@ namespace Microsoft.Scripting.JavaScript.SafeHandles
         }
 
         public JavaScriptValueSafeHandle(IntPtr handle):
-            base(handle, true)
+            this()
         {
-
+            this.handle = handle;
         }
 
         internal void SetEngine(JavaScriptEngine engine)

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ConsoleHost
 {
@@ -19,6 +20,8 @@ namespace ConsoleHost
                     using (var context = engine.AcquireContext())
                     {
                         engine.SetGlobalFunction("echo", Echo);
+                        var sumFn = engine.CreateFunction(Sum);
+                        engine.GlobalObject.SetPropertyByName("sum", sumFn);
                         engine.AddTypeToGlobal<Point3D>();
                         engine.AddTypeToGlobal<Point>();
                         engine.AddTypeToGlobal<Toaster>();
@@ -38,18 +41,18 @@ namespace ConsoleHost
                             Console.ForegroundColor = color;
                         };
 
-                        var fn = engine.EvaluateScriptText(@"(function() {
-    var t = new ToasterOven();
-    t.addEventListener('toastcompleted', function(e) {
-        echo('Toast is done!');
-        echo('{0}', JSON.stringify(e));
-    });
-    t.addEventListener('loaftoasted', function(e) {
-        echo('Loaf is done!');
-        echo('{0}', JSON.stringify(e.e));
-        echo('Cooked {0} pieces', e.e.PiecesCookied);
-    });
-    t.StartToasting();
+                        var fn = engine.EvaluateScriptText(@"(function(global) {
+    //var t = new ToasterOven();
+    //t.addEventListener('toastcompleted', function(e) {
+    //    echo('Toast is done!');
+    //    echo('{0}', JSON.stringify(e));
+    //});
+    //t.addEventListener('loaftoasted', function(e) {
+    //    echo('Loaf is done!');
+    //    echo('{0}', JSON.stringify(e.e));
+    //    echo('Cooked {0} pieces', e.e.PiecesCookied);
+    //});
+    //t.StartToasting();
 
     var o = new Point3D(1, 2, 3);
     echo(o.toString());
@@ -64,7 +67,14 @@ namespace ConsoleHost
     //echo('{0}', pt.ToString());
     //pt.Y = 207;
     //echo('{0}', pt.ToString());
-})();");
+
+    sum(5, 20, 35, 100, 7).then(function(result) {
+        echo('The result is {0} (or in hex, 0x{0:x8})', result);
+    }, function(e) {
+        echo('There was an error summing.');
+        echo(e.ToString());
+    });
+})(this);");
                         fn.Invoke(Enumerable.Empty<JavaScriptValue>());
 
                         dynamic fnAsDynamic = fn;
@@ -84,6 +94,17 @@ namespace ConsoleHost
 
                     Console.ReadLine();
                 }
+            }
+        }
+
+        private static async Task<JavaScriptValue> Sum(JavaScriptEngine callingEngine, JavaScriptValue thisValue, IEnumerable<JavaScriptValue> args)
+        {
+            int[] values = args.Select(jsv => callingEngine.Converter.ToInt32(jsv)).ToArray();
+            await Task.Delay(5000);
+
+            using (var ctx = callingEngine.AcquireContext())
+            {
+                return callingEngine.Converter.FromInt32(values.Sum());
             }
         }
 

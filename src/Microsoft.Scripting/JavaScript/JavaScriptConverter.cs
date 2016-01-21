@@ -252,7 +252,7 @@ namespace Microsoft.Scripting.JavaScript
                 bool b = (bool)o;
                 return b ? eng.TrueValue : eng.FalseValue;
             }
-            else if (t.IsValueType) 
+            else if (t.GetTypeInfo().IsValueType) 
             {
                 throw new ArgumentException("Non-primitive value types may not be projected to JavaScript directly.  Use a JSON serializer to serialize the value.  For more information, see readme.md.");
             }

@@ -236,6 +236,9 @@ namespace Microsoft.Scripting
 
         [UnmanagedFunctionPointer(CallingConvention.Winapi)]
         public delegate JsErrorCode FnJsSetExternalData(JavaScriptValueSafeHandle @ref, IntPtr externalData);
+
+        [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+        public delegate JsErrorCode FnJsSetPromiseContinuationCallback(IntPtr pfnPromiseContinuationCallback, IntPtr callbackState);
         #endregion
 
         #region Field definitions
@@ -394,6 +397,8 @@ namespace Microsoft.Scripting
         public readonly FnJsGetExternalData JsGetExternalData;
 
         public readonly FnJsSetExternalData JsSetExternalData;
+
+        public readonly FnJsSetPromiseContinuationCallback JsSetPromiseContinuationCallback;
         #endregion
 
         private static System.Lazy<ChakraApi> sharedInstance_ = new System.Lazy<ChakraApi>(Load);
@@ -488,6 +493,7 @@ namespace Microsoft.Scripting
             SetFn(ref JsStringToPointer, hModule, "JsStringToPointer");
             SetFn(ref JsGetExternalData, hModule, "JsGetExternalData");
             SetFn(ref JsSetExternalData, hModule, "JsSetExternalData");
+            SetFn(ref JsSetPromiseContinuationCallback, hModule, "JsSetPromiseContinuationCallback");
         }
 
         public static ChakraApi Instance

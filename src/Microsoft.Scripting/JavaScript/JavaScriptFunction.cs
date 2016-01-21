@@ -18,11 +18,12 @@ namespace Microsoft.Scripting.JavaScript
 
         public JavaScriptValue Invoke(IEnumerable<JavaScriptValue> args)
         {
-            var argsArray = args.PrependWith(this).Select(val => val.handle_.DangerousGetHandle()).ToArray();
+            var eng = GetEngine();
+
+            var argsArray = args.PrependWith(eng.GlobalObject).Select(val => val.handle_.DangerousGetHandle()).ToArray();
             if (argsArray.Length > ushort.MaxValue)
                 throw new ArgumentOutOfRangeException(nameof(args));
 
-            var eng = GetEngine();
             JavaScriptValueSafeHandle resultHandle;
             Errors.CheckForScriptExceptionOrThrow(api_.JsCallFunction(handle_, argsArray, (ushort)argsArray.Length, out resultHandle), eng);
             if (resultHandle.IsInvalid)
