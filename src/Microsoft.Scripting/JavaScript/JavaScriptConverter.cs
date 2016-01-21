@@ -252,6 +252,19 @@ namespace Microsoft.Scripting.JavaScript
                 bool b = (bool)o;
                 return b ? eng.TrueValue : eng.FalseValue;
             }
+            else if (t.IsValueType) 
+            {
+                throw new ArgumentException("Non-primitive value types may not be projected to JavaScript directly.  Use a JSON serializer to serialize the value.  For more information, see readme.md.");
+            }
+            else if (typeof(Task).IsAssignableFrom(t))
+            {
+                // todo : project as Promise
+                return eng.NullValue;
+            }
+            else if (typeof(Delegate).IsAssignableFrom(t))
+            {
+                throw new ArgumentException("Use JavaScriptEngine.CreateFunction to marshal a delegate to JavaScript.");
+            }
             else
             {
                 var result = InitializeProjectionForObject(o);
@@ -732,6 +745,11 @@ namespace Microsoft.Scripting.JavaScript
             }
 
             public abstract Type GetBaseType();
+
+            public abstract bool IsDelegateType
+            {
+                get;
+            }
         }
 
         private class ObjectReflector<T>
@@ -777,6 +795,14 @@ namespace Microsoft.Scripting.JavaScript
             public override Type GetBaseType()
             {
                 return TypeInfo_.BaseType;
+            }
+
+            public override bool IsDelegateType
+            {
+                get
+                {
+                    return typeof(Delegate).IsAssignableFrom(Type_);
+                }
             }
         }
     }
