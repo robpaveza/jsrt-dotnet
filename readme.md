@@ -4,6 +4,12 @@ A library for accessing the Chakra and ChakraCore
 interface from the .NET Framework.  It is inspired by [jsrt-winrt](https://github.com/robpaveza/jsrt-winrt) but 
 is not directly compatible.
 
+*Why do I care?*  If you want to extend your .NET application, or allow your users to do
+so, by writing some JavaScript at runtime, this allows you to do so without paying the 
+cost of loading an HTML engine with it.  And, it's far more convenient than the programming
+model supported by the HTML engine.  (Unless you're using HTML rendering within your app, 
+in which case using the HTML engine is pretty efficient for that).
+
 ## What is special about jsrt-dotnet?
 
 This project aims to create as seamless a bridge between your JavaScript and .NET code as 
@@ -15,13 +21,15 @@ accurate representation of the JavaScript type system from .NET.
 
 As an example, let's create a simple host function called Echo:
 
-    static JavaScriptValue Echo(JavaScriptEngine engine, bool construct, JavaScriptValue thisValue, IEnumerable<JavaScriptValue> arguments)
-    {
-        string fmt = arguments.First().ToString();
-        object[] args = (object[])arguments.Skip(1).ToArray();
-        Console.WriteLine(fmt, args);
-        return engine.UndefinedValue;
-    }
+```csharp
+static JavaScriptValue Echo(JavaScriptEngine engine, bool construct, JavaScriptValue thisValue, IEnumerable<JavaScriptValue> arguments)
+{
+    string fmt = arguments.First().ToString();
+    object[] args = (object[])arguments.Skip(1).ToArray();
+    Console.WriteLine(fmt, args);
+    return engine.UndefinedValue;
+}
+```
 
 The function must return a `JavaScriptValue` (because all JavaScript functions return 
 something - even if that something is `undefined`).  The parameters to the function 
@@ -36,14 +44,16 @@ The function expects at least a single parameter to be passed, and will accept m
 other parameters.  It then uses the `Console.WriteLine(string, params object[])` overload
 to write a formatted string.  We then add this function to the global object:
 
-    using (var runtime = new JavaScriptRuntime())
-    using (var engine = runtime.CreateEngine())
-    using (var context = engine.AcquireContext())
-    {
-        engine.SetGlobalFunction("echo", Echo);
-    
-        // TODO: Call echo
-    }
+```csharp
+using (var runtime = new JavaScriptRuntime())
+using (var engine = runtime.CreateEngine())
+using (var context = engine.AcquireContext())
+{
+    engine.SetGlobalFunction("echo", Echo);
+
+    // TODO: Call echo
+}
+```
 
 So what we do here are:
  - Create a `JavaScriptRuntime`, which has global settings and a shared memory allocator
@@ -55,17 +65,19 @@ So what we do here are:
 
 All that's left is to run some script that will call it:
 
-    using (var runtime = new JavaScriptRuntime())
-    using (var engine = runtime.CreateEngine())
-    using (var context = engine.AcquireContext())
-    {
-        engine.SetGlobalFunction("echo", Echo);
+```csharp
+using (var runtime = new JavaScriptRuntime())
+using (var engine = runtime.CreateEngine())
+using (var context = engine.AcquireContext())
+{
+    engine.SetGlobalFunction("echo", Echo);
 
-		var fn = engine.EvaluateScriptText(@"(function() {    
-    echo('{0}, {1}!', 'Hello', 'World');
+	var fn = engine.EvaluateScriptText(@"(function() {    
+	echo('{0}, {1}!', 'Hello', 'World');
 })();");
-        fn.Invoke(Enumerable.Empty<JavaScriptValue>());
-    }
+    fn.Invoke(Enumerable.Empty<JavaScriptValue>());
+}
+```
 
 If you run this from a console, you'll see
 
@@ -77,20 +89,22 @@ output on the screen.
 
 Let's start getting crazy.
 
-    using (var runtime = new JavaScriptRuntime())
-    using (var engine = runtime.CreateEngine())
-    using (var context = engine.AcquireContext())
-    {
-        engine.SetGlobalFunction("echo", Echo);
-        dynamic global = engine.GlobalObject;
-        global.hello = "Hello";
-        global.world = "world";
+```csharp
+using (var runtime = new JavaScriptRuntime())
+using (var engine = runtime.CreateEngine())
+using (var context = engine.AcquireContext())
+{
+    engine.SetGlobalFunction("echo", Echo);
+    dynamic global = engine.GlobalObject;
+    global.hello = "Hello";
+    global.world = "world";
 
-		var fn = engine.EvaluateScriptText(@"(function() {    
-    echo('{0}, {1}!', hello, world);
-})();");
-        fn.Invoke(Enumerable.Empty<JavaScriptValue>());
-    }
+	var fn = engine.EvaluateScriptText(@"(function() {    
+        echo('{0}, {1}!', hello, world);
+    })();");
+    fn.Invoke(Enumerable.Empty<JavaScriptValue>());
+}
+```
 
 What happened here?
 
@@ -124,15 +138,17 @@ What happens under the covers is:
 I can blow your mind even more.  Without even calling script, I can call into
 the script engine:
 
-    using (var runtime = new JavaScriptRuntime())
-    using (var engine = runtime.CreateEngine())
-    using (var context = engine.AcquireContext())
-    {
-        engine.SetGlobalFunction("echo", Echo);
-        dynamic global = engine.GlobalObject;
-        
-        global.echo("{0}, {1}, from dynamic.", "Hello", "world");
-    }
+```csharp
+using (var runtime = new JavaScriptRuntime())
+using (var engine = runtime.CreateEngine())
+using (var context = engine.AcquireContext())
+{
+    engine.SetGlobalFunction("echo", Echo);
+    dynamic global = engine.GlobalObject;
+    
+    global.echo("{0}, {1}, from dynamic.", "Hello", "world");
+}
+```
 
 Here, the C# dynamic binder calls into `JavaScriptObject.TryInvokeMember`, 
 which resolves the property, casts it to a `JavaScriptFunction`, and then 
@@ -217,7 +233,9 @@ In addition to providing these via objects sent into the engine directly, the
 developer can add a constructor to the global namespace via the 
 `AddTypeToGlobal` function:
 
-    engine.AddTypeToGlobal<Point3D>();
+```csharp
+engine.AddTypeToGlobal<Point3D>();
+```
 
 Instead of providing an instance of an object to the engine, this example 
 creates a function named `Point3D` on the global object, representing the 
@@ -227,79 +245,83 @@ creates a function named `Point3D` on the global object, representing the
 
 Given the following type definition:
 
-    public class Point
+```csharp
+public class Point
+{
+    public double X
     {
-        public double X
-        {
-            get;
-            set;
-        }
-        
-        public double Y
-        {
-            get;
-            set;
-        }
-        
-        public override string ToString()
-        {
-            return $"({X}, {Y})";
-        }
+        get;
+        set;
     }
     
-    public class Point3D : Point
+    public double Y
     {
-        public double Z
-        {
-            get;
-            set;
-        }
-        
-        public override string ToString()
-        {
-            return $"({X}, {Y}, {Z})";
-        }
+        get;
+        set;
     }
+    
+    public override string ToString()
+    {
+        return $"({X}, {Y})";
+    }
+}
 
-If the Point3D type is added to the global object, the equivalent code
+public class Point3D : Point
+{
+    public double Z
+    {
+        get;
+        set;
+    }
+    
+    public override string ToString()
+    {
+        return $"({X}, {Y}, {Z})";
+    }
+}
+```
+
+If the `Point3D` type is added to the global object, the equivalent code
 is executed:
 
-	(function(global, createPoint, getX, setX, getY, setY, pointToString, createPoint3D, getZ, setZ, point3DToString) {
-		function Point() {
-			if (!(this instanceof Point))
-				return new Point(arguments);
+```js
+(function(global, createPoint, getX, setX, getY, setY, pointToString, createPoint3D, getZ, setZ, point3DToString) {
+	function Point() {
+		if (!(this instanceof Point))
+			return new Point(arguments);
 
-			createPoint.call(this);
-		}
-		Object.defineProperty(Point.prototype, 'X', {
-			get: getX,
-			set: setX, 
-			enumerable: true
-		});
-		Object.defineProperty(Point.prototype, 'Y', {
-			get: getY, 
-			set: setY,
-			enumerable: true
-		});
-		Point.prototype.toString = pointToString;
+		createPoint.call(this);
+	}
+	Object.defineProperty(Point.prototype, 'X', {
+		get: getX,
+		set: setX, 
+		enumerable: true
+	});
+	Object.defineProperty(Point.prototype, 'Y', {
+		get: getY, 
+		set: setY,
+		enumerable: true
+	});
+	Point.prototype.toString = pointToString;
 
-		function Point3D() {
-			if (!(this instanceof Point3D))
-				return new Point3D(arguments);
+	function Point3D() {
+		if (!(this instanceof Point3D))
+			return new Point3D(arguments);
 
-			createPoint3D.call(this);
-		}
-		Point3D.prototype = Object.create(Point);
-		Point3D.prototype.constructor = Point3D;
-		Object.defineProperty(Point3D.prototype, 'Z', {
-			get: getZ,
-			set: setZ,
-			enumerable: true
-		});
-		Point3D.prototype.toString = point3DToString;
+		createPoint3D.call(this);
+	}
+	Point3D.prototype = Object.create(Point.prototype);
+	Point3D.prototype.constructor = Point3D;
+	Object.defineProperty(Point3D.prototype, 'Z', {
+		get: getZ,
+		set: setZ,
+		enumerable: true
+	});
+	Point3D.prototype.toString = point3DToString;
 
-		global.Point3D = Point3D;
-	})([native method representations]);
+	global.Point3D = Point3D;
+})([native method representations]);
+```
 
 The work to project `Point` in this example is preserved, and reused, so 
 if `Point3D` is added to the global before `Point`, adding `Point` will 
