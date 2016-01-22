@@ -69,6 +69,7 @@ namespace ConsoleHost
     //echo('{0}', pt.ToString());
 
     sum(5, 20, 35, 100, 7).then(function(result) {
+        echo(typeof(result));
         echo('The result is {0} (or in hex, 0x{0:x8})', result);
     }, function(e) {
         echo('There was an error summing.');

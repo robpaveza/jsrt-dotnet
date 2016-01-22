@@ -64,7 +64,6 @@ namespace Microsoft.Scripting.JavaScript
 
         public bool SimpleEquals(JavaScriptValue other)
         {
-            var eng = GetEngine();
             bool result;
             Errors.ThrowIfIs(api_.JsEquals(this.handle_, other.handle_, out result));
 
@@ -73,7 +72,6 @@ namespace Microsoft.Scripting.JavaScript
 
         public bool StrictEquals(JavaScriptValue other)
         {
-            var eng = GetEngine();
             bool result;
             Errors.ThrowIfIs(api_.JsStrictEquals(this.handle_, other.handle_, out result));
 
@@ -135,7 +133,7 @@ namespace Microsoft.Scripting.JavaScript
                             if (IsTruthy)
                                 result = -1;
                             else
-                                result = -0;
+                                result = -0.0;
                             return true;
                             
                         // TODO

@@ -89,6 +89,14 @@
           "lib/net45/_._": {}
         }
       },
+      "Moq/4.2.1510.2205": {
+        "compile": {
+          "lib/net40/Moq.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Moq.dll": {}
+        }
+      },
       "System.AppContext/4.0.0": {
         "dependencies": {
           "System.Runtime": "[4.0.0, )"
@@ -742,6 +750,14 @@
         },
         "runtime": {
           "lib/net45/_._": {}
+        }
+      },
+      "Moq/4.2.1510.2205": {
+        "compile": {
+          "lib/net40/Moq.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Moq.dll": {}
         }
       },
       "System.AppContext/4.0.0": {
@@ -1492,6 +1508,22 @@
         "ref/netcore50/Microsoft.VisualBasic.xml",
         "ref/win8/_._",
         "ref/wpa81/_._"
+      ]
+    },
+    "Moq/4.2.1510.2205": {
+      "sha512": "nqMoHSP5f04/kyKbRUjGgzqtIb5LUUs0H6llHOkQJ5Takx4Ezr2H+59pkIgxkmpbHAcGmc/KsyRZUs1ehnPYag==",
+      "type": "Package",
+      "files": [
+        "[Content_Types].xml",
+        "_rels/.rels",
+        "lib/net35/Moq.dll",
+        "lib/net35/Moq.xml",
+        "lib/net40/Moq.dll",
+        "lib/net40/Moq.xml",
+        "lib/sl5/Moq.Silverlight.dll",
+        "lib/sl5/Moq.Silverlight.xml",
+        "Moq.nuspec",
+        "package/services/metadata/core-properties/33e61c84c2dc4a3e8a7af089453712d1.psmdcp"
       ]
     },
     "System.AppContext/4.0.0": {
@@ -3280,7 +3312,9 @@
     }
   },
   "projectFileDependencyGroups": {
-    "": [],
+    "": [
+      "Moq >= 4.2.1510.2205"
+    ],
     ".NETFramework,Version=v4.6": []
   }
 }

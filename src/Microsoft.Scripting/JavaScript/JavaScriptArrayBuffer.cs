@@ -43,7 +43,7 @@ namespace Microsoft.Scripting.JavaScript
             uint len;
             Errors.ThrowIfIs(api_.JsGetArrayBufferStorage(handle_, out buffer, out len));
 
-            return new UnmanagedMemoryStream((byte*)buffer.ToPointer(), len);
+            return new UnmanagedMemoryStream((byte*)buffer.ToPointer(), len, len, FileAccess.ReadWrite);
         }
 
         internal unsafe Tuple<IntPtr, uint> GetUnderlyingMemoryInfo()

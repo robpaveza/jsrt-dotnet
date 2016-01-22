@@ -389,9 +389,11 @@ namespace Microsoft.Scripting.JavaScript
                 throw new ArgumentNullException(nameof(source));
 
             JavaScriptValueSafeHandle handle;
-            Errors.ThrowIfIs(api_.JsParseScript(source.SourceText, source.SourceContextId, source.SourceLocation, out handle));
-
-            return CreateObjectFromHandle(handle) as JavaScriptFunction;
+            if (Errors.CheckForScriptExceptionOrThrow(api_.JsParseScript(source.SourceText, source.SourceContextId, source.SourceLocation, out handle), this))
+            {
+                return CreateObjectFromHandle(handle) as JavaScriptFunction;
+            }
+            return null;
         }
 
         public JavaScriptFunction Evaluate(ScriptSource source, Stream compiledCode)
@@ -427,11 +429,11 @@ namespace Microsoft.Scripting.JavaScript
                 throw new ArgumentNullException(nameof(source));
 
             JavaScriptValueSafeHandle handle;
-            Errors.CheckForScriptExceptionOrThrow(api_.JsRunScript(source.SourceText, source.SourceContextId, source.SourceLocation, out handle), this);
-            if (handle.IsInvalid)
-                return undefined_;
-
-            return CreateValueFromHandle(handle);
+            if (Errors.CheckForScriptExceptionOrThrow(api_.JsRunScript(source.SourceText, source.SourceContextId, source.SourceLocation, out handle), this))
+            {
+                return CreateValueFromHandle(handle);
+            }
+            return undefined_;
         }
 
         public JavaScriptValue Execute(ScriptSource source, Stream compiledCode)

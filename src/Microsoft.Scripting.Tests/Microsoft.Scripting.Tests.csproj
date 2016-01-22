@@ -43,6 +43,7 @@
     <RuntimeIndentifier>$(NuGetRuntimeIdentifier)</RuntimeIndentifier>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
     </Reference>
@@ -60,8 +61,17 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="ArrayBufferTests.cs" />
+    <Compile Include="ChakraApiTests.cs" />
+    <Compile Include="ErrorTests.cs" />
+    <Compile Include="InternalExtensionsTests.cs" />
+    <Compile Include="JavaScriptValueTests.cs" />
+    <Compile Include="RuntimeBaseTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RuntimeTestsWithIdleWorkEnabled.cs" />
+    <Compile Include="RuntimeTestsWithScriptInterruptEnabled.cs" />
+    <Compile Include="ScriptSourceTest.cs" />
+    <Compile Include="SymbolsUnitTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Microsoft.Scripting\Microsoft.Scripting.csproj">
@@ -70,7 +80,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="project.json" />
+    <None Include="project.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

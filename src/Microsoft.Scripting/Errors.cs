@@ -46,27 +46,27 @@ namespace Microsoft.Scripting
 
         private static readonly Dictionary<JsErrorCode, Action> ErrorMap = new Dictionary<JsErrorCode, Action>()
         {
-            { JsErrorCode.JsCannotSetProjectionEnqueueCallback, () => { Debug.Assert(false, "Should not occur, we don't support."); throw new Exception(); } },
+            { JsErrorCode.JsCannotSetProjectionEnqueueCallback, () => { Fail("Should not occur, we don't support."); throw new Exception(); } },
             { JsErrorCode.JsErrorAlreadyDebuggingContext, () => { throw new InvalidOperationException(ERROR_ALREADY_DEBUGGING); } },
-            { JsErrorCode.JsErrorAlreadyProfilingContext, () => { Debug.Assert(false, "Should not occur, we don't support."); throw new Exception(); } },
+            { JsErrorCode.JsErrorAlreadyProfilingContext, () => { Fail("Should not occur, we don't support."); throw new Exception(); } },
             { JsErrorCode.JsErrorArgumentNotObject, () => { throw new ArgumentException(ERROR_NOT_OBJECT); } },
             { JsErrorCode.JsErrorBadSerializedScript, () => { throw new ArgumentException(ERROR_BAD_SERIALIZED_SCRIPT); } },
             { JsErrorCode.JsErrorCannotDisableExecution, () => { throw new InvalidOperationException(); } },
             { JsErrorCode.JsErrorCannotSerializeDebugScript, () => { throw new InvalidOperationException(ERROR_CANNOT_SERIALIZE_DEBUG_SCRIPT); } },
-            { JsErrorCode.JsErrorCannotStartProjection, () => { Debug.Assert(false, "Should not occur, we don't support."); throw new InvalidOperationException(); } },
+            { JsErrorCode.JsErrorCannotStartProjection, () => { Fail("Should not occur, we don't support."); throw new InvalidOperationException(); } },
             { JsErrorCode.JsErrorFatal, () => { throw new Exception("An unknown error occurred in the script engine."); } },
-            { JsErrorCode.JsErrorHeapEnumInProgress, () => { Debug.Assert(false, "Should not occur, we don't support."); throw new Exception(); } },
+            { JsErrorCode.JsErrorHeapEnumInProgress, () => { Fail("Should not occur, we don't support."); throw new Exception(); } },
             { JsErrorCode.JsErrorIdleNotEnabled, () => { throw new InvalidOperationException(ERROR_CONFIG_ERROR); } },
             { JsErrorCode.JsErrorInDisabledState, () => { throw new InvalidOperationException(ERROR_DISABLED); } },
             { JsErrorCode.JsErrorInExceptionState, () => { throw new InvalidOperationException(ERROR_ENGINE_IN_EXCEPTION_STATE); } },
             { JsErrorCode.JsErrorInObjectBeforeCollectCallback, () => { throw new InvalidOperationException(ERROR_ENGINE_COLLECTING_GARBAGE); } },
-            { JsErrorCode.JsErrorInProfileCallback, () => { Debug.Assert(false, "Should not occur, we don't support."); throw new Exception(); } },
-            { JsErrorCode.JsErrorInThreadServiceCallback, () => { Debug.Assert(false, "Should not occur, we don't support."); throw new Exception(); } },
+            { JsErrorCode.JsErrorInProfileCallback, () => { Fail("Should not occur, we don't support."); throw new Exception(); } },
+            { JsErrorCode.JsErrorInThreadServiceCallback, () => { Fail("Should not occur, we don't support."); throw new Exception(); } },
             { JsErrorCode.JsErrorInvalidArgument, () => { throw new ArgumentException(); } },
             { JsErrorCode.JsErrorNoCurrentContext, () => { throw new InvalidOperationException(ERROR_NO_CURRENT_CONTEXT); } },
             { JsErrorCode.JsErrorNotImplemented, () => { throw new NotImplementedException(); } },
             { JsErrorCode.JsErrorNullArgument, () => { throw new ArgumentNullException(); } },
-            { JsErrorCode.JsErrorObjectNotInspectable, () => { Debug.Assert(false, "Should not occur, we don't support."); throw new ArgumentException(ERROR_ARG_NOT_INSPECTABLE); } },
+            { JsErrorCode.JsErrorObjectNotInspectable, () => { Fail("Should not occur, we don't support."); throw new ArgumentException(ERROR_ARG_NOT_INSPECTABLE); } },
             { JsErrorCode.JsErrorOutOfMemory, () => { throw new OutOfMemoryException(); } },
             { JsErrorCode.JsErrorPropertyNotString, () => { throw new ArgumentException(ERROR_PROPERTY_NOT_STRING); } },
             { JsErrorCode.JsErrorPropertyNotSymbol, () => { throw new ArgumentException(ERROR_PROPERTY_NOT_SYMBOL); } },
@@ -84,7 +84,7 @@ namespace Microsoft.Scripting
             Action throwAction;
             if (!ErrorMap.TryGetValue(errorCode, out throwAction))
             {
-                throwAction = () => { throw new Exception($"Unrecognized JavaScript error {errorCode} (0x{errorCode:x8})"); };
+                throwAction = () => { throw new Exception($"Unrecognized JavaScript error {errorCode} (0x{errorCode:x})"); };
             }
 
             throwAction();
@@ -96,20 +96,22 @@ namespace Microsoft.Scripting
             Debug.Assert(errorCode != JsErrorCode.JsErrorScriptException);
 
             if (errorCode != JsErrorCode.JsNoError)
-                throw new Exception(errorCode.ToString());
+                ThrowFor(errorCode);
         }
 
         [DebuggerStepThrough]
-        public static void CheckForScriptExceptionOrThrow(JsErrorCode errorCode, JavaScriptEngine engine)
+        public static bool CheckForScriptExceptionOrThrow(JsErrorCode errorCode, JavaScriptEngine engine)
         {
             if (errorCode == JsErrorCode.JsErrorScriptException)
             {
                 engine.OnRuntimeExceptionRaised();
-                return;
+                return false;
             }
 
             if (errorCode != JsErrorCode.JsNoError)
                 ThrowFor(errorCode);
+
+            return true;
         }
 
         [DebuggerStepThrough]
@@ -117,6 +119,12 @@ namespace Microsoft.Scripting
         {
             string result = string.Format(formatStr, param);
             throw new InvalidOperationException(result);
+        }
+
+        [Conditional("ASSERT_NO_TEST_RUN")]
+        private static void Fail(string message)
+        {
+            Debug.Assert(false, message);
         }
     }
 }
