@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Microsoft.Scripting.HostBridge
 {
-    class PropertyBridge
+    internal class MethodBridge
     {
     }
 }

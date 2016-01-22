@@ -37,6 +37,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Errors.cs" />
+    <Compile Include="HostBridge\BridgeManager.cs" />
     <Compile Include="HostBridge\ClassBridge.cs" />
     <Compile Include="HostBridge\ConstructorBridge.cs" />
     <Compile Include="HostBridge\EventBridge.cs" />

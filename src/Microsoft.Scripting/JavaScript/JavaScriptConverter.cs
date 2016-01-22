@@ -1,4 +1,5 @@
-﻿using Microsoft.Scripting.JavaScript.SafeHandles;
+﻿using Microsoft.Scripting.HostBridge;
+using Microsoft.Scripting.JavaScript.SafeHandles;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -23,6 +24,7 @@ namespace Microsoft.Scripting.JavaScript
             public bool HasInstanceEvents;
         }
 
+        private BridgeManager hostBridge_;
         private WeakReference<JavaScriptEngine> engine_;
         private ChakraApi api_;
         private Dictionary<Type, JavaScriptProjection> projectionTypes_;
@@ -34,6 +36,8 @@ namespace Microsoft.Scripting.JavaScript
             api_ = engine.Api;
             projectionTypes_ = new Dictionary<Type, JavaScriptProjection>();
             eventMarshallers_ = new Dictionary<Type, Expression>();
+
+            hostBridge_ = new BridgeManager(engine);
         }
 
         private JavaScriptEngine GetEngine()
@@ -269,6 +273,64 @@ namespace Microsoft.Scripting.JavaScript
             {
                 var result = InitializeProjectionForObject(o);
                 return result;
+            }
+        }
+
+        public JavaScriptValue FromObjectViaNewBridge(object o)
+        {
+            var eng = GetEngine();
+            if (o == null)
+            {
+                return eng.NullValue;
+            }
+
+            var jsVal = o as JavaScriptValue;
+            if (jsVal != null)
+                return jsVal;
+
+            Type t = o.GetType();
+            if (t == typeof(string))
+            {
+                return FromString((string)o);
+            }
+            else if (t == typeof(double) || t == typeof(float))
+            {
+                return FromDouble((double)o);
+            }
+            else if (t == typeof(int) || t == typeof(short) || t == typeof(ushort) || t == typeof(byte) || t == typeof(sbyte))
+            {
+                return FromInt32((int)o);
+            }
+            else if (t == typeof(uint))
+            {
+                return FromDouble((uint)o);
+            }
+            else if (t == typeof(long))
+            {
+                return FromDouble((long)o);
+            }
+            else if (t == typeof(bool))
+            {
+                bool b = (bool)o;
+                return b ? eng.TrueValue : eng.FalseValue;
+            }
+            else if (t.GetTypeInfo().IsValueType)
+            {
+                throw new ArgumentException("Non-primitive value types may not be projected to JavaScript directly.  Use a JSON serializer to serialize the value.  For more information, see readme.md.");
+            }
+            else if (typeof(Task).IsAssignableFrom(t))
+            {
+                // todo : project as Promise
+                return eng.NullValue;
+            }
+            else if (typeof(Delegate).IsAssignableFrom(t))
+            {
+                throw new ArgumentException("Use JavaScriptEngine.CreateFunction to marshal a delegate to JavaScript.");
+            }
+            else
+            {
+                ClassBridge cb = hostBridge_.GetBridge(t);
+                return cb.ProjectObject(o);
             }
         }
 
