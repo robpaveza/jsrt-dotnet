@@ -65,6 +65,7 @@
     <Compile Include="ChakraApiTests.cs" />
     <Compile Include="ErrorTests.cs" />
     <Compile Include="InternalExtensionsTests.cs" />
+    <Compile Include="JavaScriptObjectTests.cs" />
     <Compile Include="JavaScriptValueTests.cs" />
     <Compile Include="RuntimeBaseTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

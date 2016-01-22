@@ -125,10 +125,6 @@ namespace Microsoft.Scripting.Tests
                 {
                     // pass
                 }
-                else
-                {
-                    Assert.Fail("Should not be encountered.");
-                }
 
                 Assert.AreEqual(-1.0, -num1);
 

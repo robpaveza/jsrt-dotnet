@@ -59,7 +59,7 @@ namespace Microsoft.Scripting.JavaScript
             var arrayCtor = eng.GlobalObject.GetPropertyByName("Array") as JavaScriptFunction;
             if (arrayCtor == null)
                 Errors.ThrowIOEFmt(Errors.DefaultFnOverwritten, "Array");
-            var arrayPrototype = arrayCtor.Prototype;
+            var arrayPrototype = arrayCtor.GetPropertyByName("prototype") as JavaScriptObject;
             if (arrayPrototype == null)
                 Errors.ThrowIOEFmt(Errors.DefaultFnOverwritten, "Array.prototype");
             var fn = arrayPrototype.GetPropertyByName(name) as JavaScriptFunction;
@@ -139,12 +139,11 @@ namespace Microsoft.Scripting.JavaScript
         {
             var eng = GetEngine();
             List<JavaScriptValue> args = new List<JavaScriptValue>();
-            args.Add(this);
             if (!string.IsNullOrEmpty(separator))
                 args.Add(eng.Converter.FromString(separator));
 
             var fn = GetArrayBuiltin("join");
-            return eng.Converter.ToString(fn.Invoke(args));
+            return eng.Converter.ToString(fn.Call(this, args));
         }
         public JavaScriptArray Slice(int beginning)
         {

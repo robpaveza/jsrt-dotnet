@@ -25,7 +25,7 @@ namespace Microsoft.Scripting.JavaScript
             {
                 var eng = GetEngine();
                 var fn = GetObjectBuiltinFunction("keys", "Object.keys");
-                return fn.Invoke(new JavaScriptValue[] { eng.UndefinedValue, this }) as JavaScriptArray;
+                return fn.Invoke(new JavaScriptValue[] { this }) as JavaScriptArray;
             }
         }
 
