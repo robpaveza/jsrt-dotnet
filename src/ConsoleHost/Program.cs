@@ -1,4 +1,5 @@
-﻿using Microsoft.Scripting.JavaScript;
+﻿using Microsoft.Scripting;
+using Microsoft.Scripting.JavaScript;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,20 +49,20 @@ namespace ConsoleHost
                         var fn = engine.EvaluateScriptText(@"(function(global) {
     //echo(point.ToString());
     printPoint();
-    point.X = -15;
+    point.x = -15;
     for (var key in point) { echo('point: {0} = {1}', key, point[key]); }
-    for (var key in point.__proto__) { try { echo('point.__proto__: {0} = {1}', key, point.__proto__[key]); } catch(e) { } }
+for (var key in point.__proto__) { try { echo('point.__proto__: {0} = {1}', key, point.__proto__[key]); } catch(e) { } }
 for (var key in point.__proto__.__proto__) { try { echo('point.__proto__.__proto__: {0} = {1}', key, point.__proto__.__proto__[key]); } catch(e) { } }
-for (var key in point.__proto__.__proto__.__proto__) { try { echo('point.__proto__.__proto__.__proto__: {0} = {1}', key, point.__proto__.__proto__.__proto__[key]); } catch (e) { } }
-for (var key in point.__proto__.__proto__.__proto__.constructor) { echo('point.__proto__.__proto__.__proto__.constructor: {0} = {1}', key, point.__proto__.__proto__.__proto__.constructor[key]); }
-    echo(point.ToString());
+//for (var key in point.__proto__.__proto__.__proto__) { try { echo('point.__proto__.__proto__.__proto__: {0} = {1}', key, point.__proto__.__proto__.__proto__[key]); } catch (e) { } }
+//for (var key in point.__proto__.__proto__.__proto__.constructor) { echo('point.__proto__.__proto__.__proto__.constructor: {0} = {1}', key, point.__proto__.__proto__.__proto__.constructor[key]); }
+    echo(point.toString());
     //printPoint();
-    point.Y = 0;
-    //echo(point.ToString());
-    printPoint();
-    point.Z = NaN;
-    //echo(point.ToString());
-    printPoint();
+    point.y = 0;
+    echo(point.toString());
+    //printPoint();
+    point.z = NaN;
+    echo(point.toString());
+    //printPoint();
     echo('Done');
 })(this);");
                         fn.Invoke(Enumerable.Empty<JavaScriptValue>());
@@ -98,34 +99,41 @@ for (var key in point.__proto__.__proto__.__proto__.constructor) { echo('point._
         }
     }
 
+    [JavaScriptHostClass(HostClassMode.OptIn)]
     public class Point
     {
+        [JavaScriptHostMember(JavaScriptName = "x")]
         public double X
         {
             get;
             set;
         }
         
+        [JavaScriptHostMember(JavaScriptName = "y")]
         public double Y
         {
             get;
             set;
         }
 
+        [JavaScriptHostMember(JavaScriptName = "toString")]
         public override string ToString()
         {
             return $"({X}, {Y})";
         }
     }
 
+    [JavaScriptHostClass(HostClassMode.OptIn)]
     public class Point3D : Point
     {
+        [JavaScriptHostMember(JavaScriptName = "z")]
         public double Z
         {
             get;
             set;
         }
 
+        [JavaScriptHostMember(JavaScriptName = "toString")]
         public override string ToString()
         {
             return $"({X}, {Y}, {Z})";

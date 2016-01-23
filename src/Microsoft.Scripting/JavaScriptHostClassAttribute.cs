@@ -10,6 +10,7 @@ namespace Microsoft.Scripting
     /// When applied to a class, modifies the way in which a host-provided class or object will be 
     /// projected into JavaScript.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Enum, AllowMultiple = false, Inherited = false)]
     public class JavaScriptHostClassAttribute : Attribute
     {
         /// <summary>

@@ -11,6 +11,7 @@ namespace Microsoft.Scripting
     /// be changed.  If the type is set to <c>OptIn</c> with the <see>JavaScriptHostClassAttribute</see>, 
     /// only those members with this attribute will be projected.
     /// </summary>
+    [AttributeUsage(AttributeTargets.Event | AttributeTargets.Method | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
     public class JavaScriptHostMemberAttribute : Attribute
     {
         /// <summary>

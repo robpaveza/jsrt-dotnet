@@ -45,6 +45,8 @@
     <Compile Include="HostBridge\ObjectBridge.cs" />
     <Compile Include="HostBridge\PropertyModel.cs" />
     <Compile Include="InternalExtensions.cs" />
+    <Compile Include="JavaScriptHostClassAttribute.cs" />
+    <Compile Include="JavaScriptHostMemberAttribute.cs" />
     <Compile Include="JavaScript\JavaScriptExecutionContext.cs" />
     <Compile Include="JavaScript\ChakraApi.cs" />
     <Compile Include="JavaScript\JavaScriptArray.cs" />

@@ -36,7 +36,14 @@ namespace Microsoft.Scripting.HostBridge
 
         public string MethodName
         {
-            get { return methodGroup_[0].Name; }
+            get
+            {
+                var result = methodGroup_[0].Name;
+                var memberAttr = methodGroup_[0].GetCustomAttribute<JavaScriptHostMemberAttribute>();
+                result = memberAttr?.JavaScriptName ?? result;
+
+                return result;
+            }
         }
 
         public string FullName

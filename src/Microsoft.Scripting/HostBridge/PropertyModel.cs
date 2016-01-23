@@ -93,6 +93,7 @@ namespace Microsoft.Scripting.HostBridge
     {
         private JavaScriptCallableFunction getter_, setter_;
         private bool isStatic_;
+        private string name_;
 
         public PropertyModel(PropertyInfo info, bool isStatic)
         {
@@ -101,6 +102,14 @@ namespace Microsoft.Scripting.HostBridge
 
             isStatic_ = isStatic;
             Property = info;
+
+            name_ = Property.Name;
+            var hostMemberAttr = info.GetCustomAttribute<JavaScriptHostMemberAttribute>();
+            if (hostMemberAttr != null)
+            {
+                name_ = hostMemberAttr.JavaScriptName ?? name_;
+            }
+
             InitializeAccessors();
         }
 
@@ -406,7 +415,12 @@ namespace Microsoft.Scripting.HostBridge
         {
             get
             {
-                return Property.Name;
+                var result = Property.Name;
+
+                var attr = Property.GetCustomAttribute<JavaScriptHostMemberAttribute>();
+                result = attr?.JavaScriptName ?? result;
+
+                return result;
             }
         }
 

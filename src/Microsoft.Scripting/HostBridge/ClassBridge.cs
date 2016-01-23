@@ -20,6 +20,7 @@ namespace Microsoft.Scripting.HostBridge
         private List<PropertyModel> instanceProperties_, staticProperties_;
         private List<MethodModel> instanceMethods_, staticMethods_;
         private BridgeManager manager_;
+        private HostClassMode hostMode_;
 
         public ClassBridge(Type type, BridgeManager manager)
         {
@@ -31,6 +32,16 @@ namespace Microsoft.Scripting.HostBridge
 
             type_ = type;
             typeInfo_ = type.GetTypeInfo();
+
+            var attribute = typeInfo_.GetCustomAttribute<JavaScriptHostClassAttribute>();
+            if (attribute == null)
+            {
+                hostMode_ = HostClassMode.FullClass;
+            }
+            else
+            {
+                hostMode_ = attribute.Mode;
+            }
 
             if (typeInfo_.IsValueType)
                 throw new InvalidOperationException($"Type \"{type.FullName}\" cannot be projected to JavaScript as it is a value-type.");
@@ -67,16 +78,34 @@ namespace Microsoft.Scripting.HostBridge
             return result;
         }
 
+        private static bool IsOptedIn(Type type)
+        {
+            TypeInfo info = type.GetTypeInfo();
+            var attr = info.GetCustomAttribute<JavaScriptHostClassAttribute>();
+            return attr != null;
+        }
+
+        private bool ShouldProjectMember(MemberInfo member)
+        {
+            return hostMode_ == HostClassMode.FullClass ||
+                        (hostMode_ == HostClassMode.OptIn &&
+                         member.GetCustomAttribute<JavaScriptHostMemberAttribute>() != null);
+        }
+
         private void InitializeBridge()
         {
             ClassBridge baseTypeBridge = null;
             if (typeInfo_.BaseType != null)
             {
-                baseTypeBridge = manager_.GetBridge(typeInfo_.BaseType);
+                if (hostMode_ == HostClassMode.FullClass ||
+                    (hostMode_ == HostClassMode.OptIn && IsOptedIn(typeInfo_.BaseType)))
+                { 
+                    baseTypeBridge = manager_.GetBridge(typeInfo_.BaseType);
+                }
             }
 
-            var instanceProperties = typeInfo_.DeclaredProperties.Where(p => !(p.GetMethod?.IsStatic ?? p.SetMethod.IsStatic));
-            var staticProperties = typeInfo_.DeclaredProperties.Where(p => (p.GetMethod?.IsStatic ?? p.SetMethod.IsStatic));
+            var instanceProperties = typeInfo_.DeclaredProperties.Where(p => !(p.GetMethod?.IsStatic ?? p.SetMethod.IsStatic) && ShouldProjectMember(p));
+            var staticProperties = typeInfo_.DeclaredProperties.Where(p => (p.GetMethod?.IsStatic ?? p.SetMethod.IsStatic) && ShouldProjectMember(p));
 
             var engine = manager_.Engine;
             // todo: project constructor using constructor bridge
@@ -112,8 +141,8 @@ namespace Microsoft.Scripting.HostBridge
                 BridgeProperty(engine, property, false, Constructor);
             }
 
-            var instanceMethods = typeInfo_.DeclaredMethods.Where(m => !m.IsSpecialName && !m.IsStatic).GroupBy(m => m.Name);
-            var staticMethods = typeInfo_.DeclaredMethods.Where(m => !m.IsSpecialName && m.IsStatic).GroupBy(m => m.Name);
+            var instanceMethods = typeInfo_.DeclaredMethods.Where(m => !m.IsSpecialName && !m.IsStatic && ShouldProjectMember(m)).GroupBy(m => m.Name);
+            var staticMethods = typeInfo_.DeclaredMethods.Where(m => !m.IsSpecialName && m.IsStatic && ShouldProjectMember(m)).GroupBy(m => m.Name);
             
             foreach (var methodGroup in instanceMethods)
             {
@@ -147,7 +176,7 @@ namespace Microsoft.Scripting.HostBridge
                 {
                     propertyDefinition.SetPropertyByName("set", engine.CreateFunction(propertyModel.Setter, propertyModel.FullSetterName));
                 }
-                targetObject.DefineProperty(property.Name, propertyDefinition);
+                targetObject.DefineProperty(propertyModel.PropertyName, propertyDefinition);
             }
         }
 
