@@ -22,12 +22,16 @@ namespace ConsoleHost
                         engine.SetGlobalFunction("echo", Echo);
                         var sumFn = engine.CreateFunction(Sum);
                         engine.GlobalObject.SetPropertyByName("sum", sumFn);
-                        engine.AddTypeToGlobal<Point3D>();
-                        engine.AddTypeToGlobal<Point>();
-                        engine.AddTypeToGlobal<Toaster>();
-                        engine.AddTypeToGlobal<ToasterOven>();
-                        var pt = new Point3D { X = 18, Y = 27, Z = -1 };
-                        //engine.SetGlobalVariable("pt", engine.Converter.FromObject(pt));
+
+                        var point = new Point3D() { X = 25, Y = 75, Z = -24.3 };
+                        engine.SetGlobalFunction("printPoint", (e, c, t, a) =>
+                        {
+                            Console.WriteLine(point.ToString());
+                            return e.UndefinedValue;
+                        });
+                        engine.SetGlobalVariable("point",
+                            engine.Converter.FromObjectViaNewBridge(point));
+                        
                         engine.RuntimeExceptionRaised += (sender, e) =>
                         {
                             dynamic error = engine.GetAndClearException();
@@ -42,53 +46,25 @@ namespace ConsoleHost
                         };
 
                         var fn = engine.EvaluateScriptText(@"(function(global) {
-    //var t = new ToasterOven();
-    //t.addEventListener('toastcompleted', function(e) {
-    //    echo('Toast is done!');
-    //    echo('{0}', JSON.stringify(e));
-    //});
-    //t.addEventListener('loaftoasted', function(e) {
-    //    echo('Loaf is done!');
-    //    echo('{0}', JSON.stringify(e.e));
-    //    echo('Cooked {0} pieces', e.e.PiecesCookied);
-    //});
-    //t.StartToasting();
-
-    var o = new Point3D(1, 2, 3);
-    echo(o.toString());
-    o.X = 254;
-    echo('{0}', o.X);
-    o.Y = 189;
-    o.Z = -254.341;
-    echo('o after mutation? {0}', o.ToString());
-    echo('{0}, {1}!', 'Hello', 'world');
-    //echo('{0}', pt.X);
-    //echo('{0}', pt.Y);
-    //echo('{0}', pt.ToString());
-    //pt.Y = 207;
-    //echo('{0}', pt.ToString());
-
-    sum(5, 20, 35, 100, 7).then(function(result) {
-        echo('The result is {0} (or in hex, 0x{0:x8})', result);
-    }, function(e) {
-        echo('There was an error summing.');
-        echo(e.ToString());
-    });
+    //echo(point.ToString());
+    printPoint();
+    point.X = -15;
+    for (var key in point) { echo('point: {0} = {1}', key, point[key]); }
+    for (var key in point.__proto__) { try { echo('point.__proto__: {0} = {1}', key, point.__proto__[key]); } catch(e) { } }
+for (var key in point.__proto__.__proto__) { try { echo('point.__proto__.__proto__: {0} = {1}', key, point.__proto__.__proto__[key]); } catch(e) { } }
+for (var key in point.__proto__.__proto__.__proto__) { try { echo('point.__proto__.__proto__.__proto__: {0} = {1}', key, point.__proto__.__proto__.__proto__[key]); } catch (e) { } }
+for (var key in point.__proto__.__proto__.__proto__.constructor) { echo('point.__proto__.__proto__.__proto__.constructor: {0} = {1}', key, point.__proto__.__proto__.__proto__.constructor[key]); }
+    echo(point.ToString());
+    //printPoint();
+    point.Y = 0;
+    //echo(point.ToString());
+    printPoint();
+    point.Z = NaN;
+    //echo(point.ToString());
+    printPoint();
+    echo('Done');
 })(this);");
                         fn.Invoke(Enumerable.Empty<JavaScriptValue>());
-
-                        dynamic fnAsDynamic = fn;
-                        fnAsDynamic.foo = 24;
-                        dynamic global = engine.GlobalObject;
-                        global.echo("{0}, {1}, via dynamic!", "Hey there", "world");
-
-                        dynamic echo = global.echo;
-                        echo("Whoa, {0}, that {1} {2}???", "world", "really", "worked");
-
-                        foreach (dynamic name in global.Object.getOwnPropertyNames(global))
-                        {
-                            echo(name);
-                        }
 
                     } // release context 
 

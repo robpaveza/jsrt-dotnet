@@ -43,6 +43,10 @@ namespace Microsoft.Scripting.JavaScript
             }
         }
 
+        /// <summary>
+        /// Corresponds to the <c>__proto__</c> JavaScript property (or what is referred 
+        /// to by the ECMAScript spec as the "internal [[Prototype]] slot").
+        /// </summary>
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
         public JavaScriptObject Prototype
         {
