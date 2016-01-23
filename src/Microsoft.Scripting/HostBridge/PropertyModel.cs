@@ -261,7 +261,7 @@ namespace Microsoft.Scripting.HostBridge
                                                 argsParamExpr
                                             )
                                         ),
-                                        // if (argsArray.Length < 1) {
+                                        // if (argsArray.Length < 1) 
                                         Expression.IfThen(
                                             Expression.LessThan(
                                                 Expression.Property(
@@ -270,17 +270,28 @@ namespace Microsoft.Scripting.HostBridge
                                                 ),
                                                 Expression.Constant(1)
                                             ),
-                                            // engine.SetException(engine.CreateRangeError(...))
-                                            Expression.Call(
-                                                engineParamExpr,
-                                                typeof(JavaScriptEngine).GetMethod(nameof(JavaScriptEngine.SetException)),
+                                            // {
+                                            Expression.Block(
+                                                // engine.SetException(engine.CreateRangeError(...))
                                                 Expression.Call(
                                                     engineParamExpr,
-                                                    typeof(JavaScriptEngine).GetMethod(nameof(JavaScriptEngine.CreateRangeError)),
-                                                    Expression.Constant("Insufficient number of arguments.")
+                                                    typeof(JavaScriptEngine).GetMethod(nameof(JavaScriptEngine.SetException)),
+                                                    Expression.Call(
+                                                        engineParamExpr,
+                                                        typeof(JavaScriptEngine).GetMethod(nameof(JavaScriptEngine.CreateRangeError)),
+                                                        Expression.Constant("Insufficient number of arguments.")
+                                                    )
+                                                ),
+                                                // return engine.UndefinedValue;
+                                                Expression.Return(
+                                                    getReturnLabel,
+                                                    Expression.Property(
+                                                        engineParamExpr,
+                                                        nameof(JavaScriptEngine.UndefinedValue)
+                                                    )
                                                 )
+                                            // }
                                             )
-                                        // }
                                         ),
                                         // thisObj = thisValue as JavaScriptObject;
                                         Expression.Assign(
@@ -354,7 +365,11 @@ namespace Microsoft.Scripting.HostBridge
                                             value
                                         ),
 
-                                        Expression.ArrayIndex(argsArrayExpr, Expression.Constant(0))
+                                        Expression.Return(  
+                                            getReturnLabel, 
+                                            Expression.ArrayIndex(argsArrayExpr, Expression.Constant(0))
+                                        ),
+                                        Expression.Label(getReturnLabel, Expression.Convert(Expression.Constant(null), typeof(JavaScriptValue)))
                                     ),
                                     FullSetterName,
                                     paramsExpr

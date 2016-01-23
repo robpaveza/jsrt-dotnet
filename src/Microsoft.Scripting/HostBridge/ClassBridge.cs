@@ -17,7 +17,8 @@ namespace Microsoft.Scripting.HostBridge
         private JavaScriptFunction Constructor;
         private Type type_;
         private TypeInfo typeInfo_;
-        private List<PropertyBridge.PropertyModel> instanceProperties_, staticProperties_;
+        private List<PropertyModel> instanceProperties_, staticProperties_;
+        private List<MethodModel> instanceMethods_, staticMethods_;
         private BridgeManager manager_;
 
         public ClassBridge(Type type, BridgeManager manager)
@@ -36,8 +37,11 @@ namespace Microsoft.Scripting.HostBridge
 
             RefCount = 1;
             manager_ = manager;
-            instanceProperties_ = new List<PropertyBridge.PropertyModel>();
-            staticProperties_ = new List<PropertyBridge.PropertyModel>();
+            instanceProperties_ = new List<PropertyModel>();
+            staticProperties_ = new List<PropertyModel>();
+
+            instanceMethods_ = new List<MethodModel>();
+            staticMethods_ = new List<MethodModel>();
 
             InitializeBridge();
         }
@@ -96,6 +100,7 @@ namespace Microsoft.Scripting.HostBridge
 
             // MyObject.prototype.constructor = MyObject;
             Prototype.SetPropertyByName("constructor", Constructor);
+            Prototype.SetPropertyByName("__CLRType__", engine.Converter.FromString(typeInfo_.FullName));
 
             foreach (var property in instanceProperties)
             {
@@ -107,7 +112,19 @@ namespace Microsoft.Scripting.HostBridge
                 BridgeProperty(engine, property, false, Constructor);
             }
 
-            // todo: functions
+            var instanceMethods = typeInfo_.DeclaredMethods.Where(m => !m.IsSpecialName && !m.IsStatic).GroupBy(m => m.Name);
+            var staticMethods = typeInfo_.DeclaredMethods.Where(m => !m.IsSpecialName && m.IsStatic).GroupBy(m => m.Name);
+            
+            foreach (var methodGroup in instanceMethods)
+            {
+                BridgeMethod(engine, methodGroup.ToArray(), true, Prototype);
+            }
+
+            foreach (var methodGroup in staticMethods)
+            {
+                BridgeMethod(engine, methodGroup.ToArray(), false, Constructor);
+            }
+
             // todo: events
 
             Prototype.Freeze();
@@ -115,10 +132,10 @@ namespace Microsoft.Scripting.HostBridge
 
         private void BridgeProperty(JavaScriptEngine engine, PropertyInfo property, bool isInstance, JavaScriptObject targetObject)
         {
-            PropertyBridge.PropertyModel propertyModel;
-            if (PropertyBridge.PropertyModel.TryCreate(property, false, out propertyModel))
+            PropertyModel propertyModel;
+            if (PropertyModel.TryCreate(property, !isInstance, out propertyModel))
             {
-                instanceProperties_.Add(propertyModel);
+                (isInstance ? instanceProperties_ : staticProperties_).Add(propertyModel);
 
                 var propertyDefinition = engine.CreateObject();
                 propertyDefinition.SetPropertyByName("enumerable", engine.TrueValue);
@@ -131,6 +148,28 @@ namespace Microsoft.Scripting.HostBridge
                     propertyDefinition.SetPropertyByName("set", engine.CreateFunction(propertyModel.Setter, propertyModel.FullSetterName));
                 }
                 targetObject.DefineProperty(property.Name, propertyDefinition);
+            }
+        }
+
+        private void BridgeMethod(JavaScriptEngine engine, MethodInfo[] methodGroup, bool isInstance, JavaScriptObject targetObject)
+        {
+            MethodModel methodModel;
+            
+            if (MethodModel.TryCreate(methodGroup, !isInstance, out methodModel))
+            {
+                (isInstance ? instanceMethods_ : staticMethods_).Add(methodModel);
+                JavaScriptFunction fn;
+                if (methodModel.IsAsync)
+                {
+                    // todo: enable async to have names
+                    // fn = engine.CreateFunction(methodModel.AsyncEntryPoint, methodModel.FullName, AsyncHostFunctionKind.Promise);
+                    fn = engine.CreateFunction(methodModel.AsyncEntryPoint, AsyncHostFunctionKind.Promise);
+                }
+                else
+                {
+                    fn = engine.CreateFunction(methodModel.EntryPoint, methodModel.FullName);
+                }
+                targetObject.SetPropertyByName(methodModel.MethodName, fn);
             }
         }
 

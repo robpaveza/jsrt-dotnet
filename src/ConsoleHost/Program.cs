@@ -49,8 +49,13 @@ namespace ConsoleHost
     //echo(point.ToString());
     printPoint();
     point.X = -15;
-    //echo(point.ToString());
-    printPoint();
+    for (var key in point) { echo('point: {0} = {1}', key, point[key]); }
+    for (var key in point.__proto__) { try { echo('point.__proto__: {0} = {1}', key, point.__proto__[key]); } catch(e) { } }
+for (var key in point.__proto__.__proto__) { try { echo('point.__proto__.__proto__: {0} = {1}', key, point.__proto__.__proto__[key]); } catch(e) { } }
+for (var key in point.__proto__.__proto__.__proto__) { try { echo('point.__proto__.__proto__.__proto__: {0} = {1}', key, point.__proto__.__proto__.__proto__[key]); } catch (e) { } }
+for (var key in point.__proto__.__proto__.__proto__.constructor) { echo('point.__proto__.__proto__.__proto__.constructor: {0} = {1}', key, point.__proto__.__proto__.__proto__.constructor[key]); }
+    echo(point.ToString());
+    //printPoint();
     point.Y = 0;
     //echo(point.ToString());
     printPoint();
