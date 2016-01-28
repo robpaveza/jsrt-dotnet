@@ -40,9 +40,12 @@
     <Compile Include="HostBridge\BridgeManager.cs" />
     <Compile Include="HostBridge\ClassBridge.cs" />
     <Compile Include="HostBridge\ConstructorBridge.cs" />
-    <Compile Include="HostBridge\EventBridge.cs" />
+    <Compile Include="HostBridge\EventModel.cs" />
+    <Compile Include="HostBridge\EventModel2.cs" />
+    <Compile Include="HostBridge\HostModelManager.cs" />
     <Compile Include="HostBridge\MethodModel.cs" />
-    <Compile Include="HostBridge\ObjectBridge.cs" />
+    <Compile Include="HostBridge\ModelPrototype.cs" />
+    <Compile Include="HostBridge\ObjectModel.cs" />
     <Compile Include="HostBridge\PropertyModel.cs" />
     <Compile Include="InternalExtensions.cs" />
     <Compile Include="JavaScriptHostClassAttribute.cs" />

@@ -12,6 +12,7 @@ namespace Microsoft.Scripting.HostBridge
     /// Manages the list of active ClassBridge instances for a given script engine.
     /// Class bridges are per-engine.
     /// </summary>
+    [Obsolete("HostModelManager is preferred and BridgeManager will be removed.  Currently mid-refactor.")]
     internal class BridgeManager
     {
         private JavaScriptEngine engine_;
