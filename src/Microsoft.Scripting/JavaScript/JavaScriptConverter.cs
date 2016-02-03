@@ -276,7 +276,7 @@ namespace Microsoft.Scripting.JavaScript
             }
         }
 
-        public JavaScriptValue FromObjectViaNewBridge(object o)
+        public JavaScriptValue FromObjectViaNewBridge(object o, TaskFactory taskFactory)
         {
             var eng = GetEngine();
             if (o == null)
@@ -329,9 +329,14 @@ namespace Microsoft.Scripting.JavaScript
             }
             else
             {
-                ClassBridge cb = hostBridge_.GetBridge(t);
+                ClassBridge cb = hostBridge_.GetBridge(t, taskFactory);
                 return cb.ProjectObject(o);
             }
+        }
+
+        public JavaScriptValue FromObjectViaNewBridge(object o)
+        {
+            return FromObjectViaNewBridge(o, Task.Factory);
         }
 
         public object ToObject(JavaScriptValue val)

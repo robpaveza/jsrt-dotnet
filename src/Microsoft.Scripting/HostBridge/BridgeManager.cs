@@ -28,7 +28,7 @@ namespace Microsoft.Scripting.HostBridge
             classBridges_ = new Dictionary<Type, ClassBridge>();
         }
 
-        public ClassBridge GetBridge(Type type)
+        public ClassBridge GetBridge(Type type, TaskFactory taskFactory)
         {
             ClassBridge result;
             if (classBridges_.TryGetValue(type, out result))
@@ -37,7 +37,7 @@ namespace Microsoft.Scripting.HostBridge
             }
             else
             {
-                result = new ClassBridge(type, this);
+                result = new ClassBridge(type, this, taskFactory);
                 classBridges_.Add(type, result);
             }
 
