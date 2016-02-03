@@ -770,6 +770,11 @@ return p;
             return CreateObjectFromHandle(resultHandle) as JavaScriptFunction;
         }
 
+        public JavaScriptFunction CreateFunction(JavaScriptCallableAsyncFunction hostFunction, AsyncHostFunctionKind functionMarshalingKind = AsyncHostFunctionKind.Promise)
+        {
+            return CreateFunction(hostFunction, Task.Factory, functionMarshalingKind);
+        }
+
         public JavaScriptFunction CreateFunction(JavaScriptCallableAsyncFunction hostFunction, string name, AsyncHostFunctionKind functionMarshalingKind = AsyncHostFunctionKind.Promise)
         {
             return null;
