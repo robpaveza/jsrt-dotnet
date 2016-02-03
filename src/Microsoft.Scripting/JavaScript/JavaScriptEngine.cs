@@ -671,8 +671,8 @@ namespace Microsoft.Scripting.JavaScript
 
             return CreateObjectFromHandle(resultHandle) as JavaScriptFunction;
         }
-
-        public JavaScriptFunction CreateFunction(JavaScriptCallableAsyncFunction hostFunction, AsyncHostFunctionKind functionMarshalingKind = AsyncHostFunctionKind.Promise)
+        
+        public JavaScriptFunction CreateFunction(JavaScriptCallableAsyncFunction hostFunction, TaskFactory taskFactory, AsyncHostFunctionKind functionMarshalingKind = AsyncHostFunctionKind.Promise)
         {
             if (hostFunction == null)
                 throw new ArgumentNullException(nameof(hostFunction));
@@ -708,7 +708,9 @@ return p;
 
                     var promise = Promise_.Construct(new[] { promiseInit });
 
-                    Task.Run(async () =>
+                    var runner = (taskFactory == Task.Factory ? (Func < Func<Task>, Task> )Task.Run : taskFactory.StartNew);
+
+                    runner(async () =>
                     {
                         JavaScriptValue resultValue = null;
                         bool succeeded = false;

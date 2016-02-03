@@ -22,7 +22,7 @@ namespace Microsoft.Scripting.HostBridge
         private BridgeManager manager_;
         private HostClassMode hostMode_;
 
-        public ClassBridge(Type type, BridgeManager manager)
+        public ClassBridge(Type type, BridgeManager manager, TaskFactory taskFactory)
         {
             Debug.Assert(type != null && manager != null);
             if (type == null)
@@ -54,7 +54,7 @@ namespace Microsoft.Scripting.HostBridge
             instanceMethods_ = new List<MethodModel>();
             staticMethods_ = new List<MethodModel>();
 
-            InitializeBridge();
+            InitializeBridge(taskFactory);
         }
 
         internal void AddRef()
@@ -92,7 +92,7 @@ namespace Microsoft.Scripting.HostBridge
                          member.GetCustomAttribute<JavaScriptHostMemberAttribute>() != null);
         }
 
-        private void InitializeBridge()
+        private void InitializeBridge(TaskFactory taskFactory)
         {
             ClassBridge baseTypeBridge = null;
             if (typeInfo_.BaseType != null)
@@ -100,7 +100,7 @@ namespace Microsoft.Scripting.HostBridge
                 if (hostMode_ == HostClassMode.FullClass ||
                     (hostMode_ == HostClassMode.OptIn && IsOptedIn(typeInfo_.BaseType)))
                 { 
-                    baseTypeBridge = manager_.GetBridge(typeInfo_.BaseType);
+                    baseTypeBridge = manager_.GetBridge(typeInfo_.BaseType, taskFactory);
                 }
             }
 
@@ -146,12 +146,12 @@ namespace Microsoft.Scripting.HostBridge
             
             foreach (var methodGroup in instanceMethods)
             {
-                BridgeMethod(engine, methodGroup.ToArray(), true, Prototype);
+                BridgeMethod(engine, methodGroup.ToArray(), true, Prototype, taskFactory);
             }
 
             foreach (var methodGroup in staticMethods)
             {
-                BridgeMethod(engine, methodGroup.ToArray(), false, Constructor);
+                BridgeMethod(engine, methodGroup.ToArray(), false, Constructor, taskFactory);
             }
 
             // todo: events
@@ -180,7 +180,7 @@ namespace Microsoft.Scripting.HostBridge
             }
         }
 
-        private void BridgeMethod(JavaScriptEngine engine, MethodInfo[] methodGroup, bool isInstance, JavaScriptObject targetObject)
+        private void BridgeMethod(JavaScriptEngine engine, MethodInfo[] methodGroup, bool isInstance, JavaScriptObject targetObject, TaskFactory taskFactory)
         {
             MethodModel methodModel;
             
@@ -192,7 +192,7 @@ namespace Microsoft.Scripting.HostBridge
                 {
                     // todo: enable async to have names
                     // fn = engine.CreateFunction(methodModel.AsyncEntryPoint, methodModel.FullName, AsyncHostFunctionKind.Promise);
-                    fn = engine.CreateFunction(methodModel.AsyncEntryPoint, AsyncHostFunctionKind.Promise);
+                    fn = engine.CreateFunction(methodModel.AsyncEntryPoint, taskFactory, AsyncHostFunctionKind.Promise);
                 }
                 else
                 {
