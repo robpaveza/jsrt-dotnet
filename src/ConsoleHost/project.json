@@ -1,6 +1,6 @@
 ﻿{
   "frameworks": {
-    "net46": {}
+    "net48": {}
   },
   "runtimes": {
     "win": {}

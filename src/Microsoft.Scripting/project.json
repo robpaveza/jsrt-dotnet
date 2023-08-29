@@ -1,6 +1,6 @@
 ﻿{
   "supports": {
-    "net46.app": {},
+    "net48.app": {},
     "dnxcore50.app": {}
   },
   "dependencies": {
